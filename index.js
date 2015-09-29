@@ -3,11 +3,8 @@
 // -- tlrobinson Tom Robinson
 // -- abhinav Abhinav Gupta
 
-var os = require('os');
-var system = require('system');
-var file = require('file');
-var util = require('narwhal/util');
-var stream = require('narwhal/term').stream;
+var fs = require('fs');
+var path = require('path');
 
 exports.UsageError = function (message) {
     this.name = "UsageError";
@@ -86,13 +83,13 @@ exports.Parser.prototype.def = function (name, value) {
 exports.Parser.prototype.reset = function (options) {
     var self = this;
     for (var name in this._def) {
-        if (util.has(this._def, name) && !util.has(options, name))
-            options[name] = util.copy(this._def[name]);
+        if (hasOwnProperty.call(this._def, name) && !hasOwnProperty.call(options, name))
+            options[name] = copy(this._def[name]);
     }
     this._options.forEach(function (option) {
         if (!(option instanceof self.Option))
             return;
-        if (!util.has(options, option.getName()))
+        if (!hasOwnProperty.call(options, option.getName()))
             options[option.getName()] = option._def;
     });
 };
@@ -196,7 +193,7 @@ exports.Parser.prototype.act = function (args, options) {
 
 /**
  * Add an action to the parser.
- * 
+ *
  * If an action already exists, the new action will be executed after the
  * executing action.
  *
@@ -236,7 +233,7 @@ exports.Parser.prototype.helpful = function () {
             return self.printHelp(options);
         })
         .halt();
-    if (util.len(this._commands))
+    if (!isEmpty(this._commands))
         this.command('help', function (options) {
             self.printHelp(options);
         }).help('displays usage information');
@@ -258,12 +255,12 @@ exports.Parser.prototype.printHelp = function (options) {
     if (args.length) {
         // parse args for deep help
         // TODO offer extended help for options
-        if (!util.has(this._commands, args[0])) {
-            this.error(options, util.repr(args[0]) + ' is not a command.');
+        if (!hasOwnProperty.call(this._commands, args[0])) {
+            this.error(options, JSON.stringify(args[0]) + ' is not a command.');
             this.printCommands(options);
             this.exit(options);
         } else {
-            util.put(args, 1, '--help');
+            args.splice(1, 0, '--help');
             this._commands[args[0]]().act(args, options);
             this.exit(options);
         }
@@ -279,13 +276,13 @@ exports.Parser.prototype.printHelp = function (options) {
 
 exports.Parser.prototype.printUsage = function (options) {
     this.print(
-        'Usage: \0bold(\0blue(' + file.basename(options.command || '<unknown>') +
-        (!this._interleaved ?  ' [OPTIONS]' : '' ) + 
-        (util.len(this._commands) ?
+        'Usage: \0bold(\0blue(' + path.basename(options.command || '<unknown>') +
+        (!this._interleaved ?  ' [OPTIONS]' : '' ) +
+        (!isEmpty(this._commands) ?
             ' COMMAND' :
             ''
-        ) + 
-        (util.len(this._args) ?
+        ) +
+        (this._args.length ?
             ' ' + this._args.map(function (arg) {
                 if (arg._optional) {
                     return '[' + arg._name.toUpperCase() + ']';
@@ -298,8 +295,8 @@ exports.Parser.prototype.printUsage = function (options) {
         (this._vargs ?
             ' [' + this._vargs._name.toUpperCase() + ' ...]':
             ''
-        ) + 
-        (this._interleaved ?  ' [OPTIONS]' : '' ) + 
+        ) +
+        (this._interleaved ?  ' [OPTIONS]' : '' ) +
         (this._usage ?
             ' ' + this._usage :
             ''
@@ -308,30 +305,32 @@ exports.Parser.prototype.printUsage = function (options) {
 };
 
 exports.Parser.prototype.printCommands = function (options) {
-    var self = this;
-    util.forEachApply(
-        util.items(this._commands),
-        function (name, command) {
-            var parser = command();
-            self.print('  \0bold(\0green(' + name + '\0)\0)' + (
-                parser._help ?
+    var names = Object.keys(this._commands);
+    for (var index = 0; index < names.length; index++) {
+        var name = names[index];
+        var command = this._commands[name];
+        var parser = command();
+        this.print('  \0bold(\0green(' + name + '\0)\0)' + (
+            parser._help ?
+            (
+                ': ' +
                 (
-                    ': ' +
-                    (
-                        parser._action?
-                        '': '\0red(NYI\0): '
-                    ) + 
-                    parser._help
-                ) : ''
-            ));
-        }
-    );
+                    parser._action?
+                    '': '\0red(NYI\0): '
+                ) +
+                parser._help
+            ) : ''
+        ));
+    }
 };
 
 exports.Parser.prototype.printOption = function (options, option, depth, parent) {
     var self = this;
     depth = depth || 0;
-    var indent = util.mul('   ', depth);
+    var indent = '';
+    for (var index = 0; index < depth; index++) {
+        index += '    ';
+    }
 
     if (option._hidden)
         return;
@@ -359,19 +358,18 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
     if (option._action && option._action.length > 2)
         message.push(
             ' ' +
-            util.range(option._action.length - 2)
+            range(option._action.length - 2)
             .map(function () {
-                return '\0bold(\0green(' + util.upper(
-                    option.getDisplayName()
-                ) + '\0)\0)';
+                return '\0bold(\0green(' + option.getDisplayName().toUpperCase() + '\0)\0)';
             }).join(' ')
         );
     if (option._help)
         message.push(': ' + option._help + '');
     if (option._choices) {
         var choices = option._choices;
-        if (!util.isArrayLike(choices))
-            choices = util.keys(choices);
+        if (choices && typeof choices.length !== 'number') {
+            choices = Object.keys(choices);
+        }
         message.push(' \0bold(\0blue((' + choices.join(', ') + ')\0)\0)');
     }
     if (option._halt)
@@ -407,19 +405,19 @@ exports.Parser.prototype.exit = function (status) {
         );
     } else {
         // FIXME: exit is sometimes called with the "options" object as the "status" argument. Why?
-        os.exit(typeof status == "number" ? status : 1);
-        throw new Error("exit failed");
+        process.exit(typeof status == "number" ? status : 1);
     }
 };
 
 exports.Parser.prototype.print = function () {
-    if (this._parser)
+    if (this._parser) {
         this._parser.print.apply(
             this._parser,
             arguments
         );
-    else
-        stream.print.apply(null, arguments);
+    } else {
+        console.log.apply(null, arguments);
+    }
 };
 
 // verifies that the parser is fully configured
@@ -429,25 +427,26 @@ exports.Parser.prototype.check = function () {
     self._options.forEach(function (option) {
         if (!(option instanceof self.Option))
             return;
-        if (!option._action)
+        if (!option._action) {
             throw new exports.ConfigurationError(
-                "No action associated with the option " + 
-                util.repr(option.getDisplayName())
+                "No action associated with the option"
+                // TODO repr(option.getDisplayName())
             );
+        }
     });
 };
 
 /**
  * Parse the arguments, calling the appropriate option actions.
  *
- * @param {String[]}    [args=system.args]  command line arguments
- * @param {Object}      [options]           parser state
- * @param {Boolean}     [noCommand=false]   true if sub-commands are not
- *                                          allowed
- * @param {Boolean}     [allowInterleaved]  true to allow interleaved
- *                                          arguments; overrides
- *                                          this.interleaved
- * @returns {Object}                        final parser state
+ * @param {String[]}    [args=process.argv]  command line arguments
+ * @param {Object}      [options]            parser state
+ * @param {Boolean}     [noCommand=false]    true if sub-commands are not
+ *                                           allowed
+ * @param {Boolean}     [allowInterleaved]   true to allow interleaved
+ *                                           arguments; overrides
+ *                                           this.interleaved
+ * @returns {Object}                         final parser state
  */
 exports.Parser.prototype.parse = function (args, options, noCommand, allowInterleaved) {
 
@@ -459,7 +458,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
     this.check();
 
     if (!args)
-        args = system.args;
+        args = process.argv.slice(1);
     if (!options)
         options = {};
     if (allowInterleaved === undefined)
@@ -473,7 +472,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
         if (n > args.length) {
             this.error(
                 options,
-                'Error: The ' + util.enquote(name) +
+                'Error: The ' + JSON.stringify(name) +
                 ' option requires ' + n + ' arguments.'
             );
         }
@@ -515,7 +514,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
                 args.unshift(value);
             }
 
-            if (util.has(this._long, word)) {
+            if (hasOwnProperty.call(this._long, word)) {
 
                 var option = this._long[word];
                 if (!option._action) {
@@ -544,7 +543,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
                     break ARGS;
 
             } else {
-                this.error(options, 'Error: Unrecognized option: ' + util.enquote(word));
+                this.error(options, 'Error: Unrecognized option: ' + JSON.stringify(word));
             }
 
         } else if (/^-/.test(arg)) {
@@ -552,7 +551,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
             var letters = arg.match(/^-(.*)/)[1].split('');
             while (letters.length) {
                 var letter = letters.shift();
-                if (util.has(this._short, letter)) {
+                if (hasOwnProperty.call(this._short, letter)) {
                     var option = this._short[letter];
 
                     if (option._action.length > 2) {
@@ -583,7 +582,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
                         break ARGS;
 
                 } else {
-                    this.error(options, 'Error: unrecognized option: ' + util.enquote(letter));
+                    this.error(options, 'Error: unrecognized option: ' + JSON.stringify(letter));
                 }
             }
 
@@ -598,9 +597,9 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
     // add the interleaved arguments back in
     args.unshift.apply(args, interleavedArgs)
 
-    if (util.len(this._commands)) {
+    if (!isEmpty(this._commands)) {
         if (args.length) {
-            if (util.has(this._commands, args[0])) {
+            if (hasOwnProperty.call(this._commands, args[0])) {
                 var command = this._commands[args[0]];
                 command().act(args, options);
             } else {
@@ -617,7 +616,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
 
 /**
  * Represents positional arguments for the parser.
- * 
+ *
  * @constructor
  * @param {Parser} parser   the parent parser
  */
@@ -697,7 +696,8 @@ exports.Option = function (parser, args) {
     };
     this._long = [];
     this._short = [];
-    util.forEach(args, function (arg) {
+    for (var index = 0; index < args.length; index++) {
+        var arg = args[index];
         if (typeof arg == "function") {
             self.action(arg);
         } else if (typeof arg !== "string") {
@@ -723,7 +723,7 @@ exports.Option = function (parser, args) {
                 self.name(arg);
             }
         }
-    });
+    }
     if (!(self._short.length || self._long.length || self._name))
         throw new exports.ConfigurationError("Option has no name.");
     return this;
@@ -898,26 +898,26 @@ exports.Option.prototype.choices = function (choices) {
     this.set();
     this._choices = choices;
     var self = this;
-    if (util.isArrayLike(choices)) {
+    if (typeof choices.length === 'number') {
         return this.validate(function (value) {
             if (choices.indexOf(value) < 0)
                 throw new exports.UsageError(
-                    "choice for " + util.upper(self.getDisplayName()) +
-                    " is invalid: " + util.repr(value) + "\n" +
+                    "choice for " + self.getDisplayName().toUpperCase() +
+                    " is invalid: " + JSON.stringify(value) + "\n" +
                     "Use one of: " + choices.map(function (choice) {
-                        return util.enquote(choice);
+                        return JSON.stringify(choice);
                     }).join(', ')
                 );
             return value;
         })
     } else {
         return this.validate(function (value) {
-            if (!util.has(choices, value))
+            if (!hasOwnProperty.call(choices, value))
                 throw new exports.UsageError(
-                    "choice for " + util.upper(self.getDisplayName()) +
-                    " is invalid: " + util.enquote(value) + "\n" +
-                    "Use one of: " + util.keys(choices).map(function (choice) {
-                        return util.enquote(choice);
+                    "choice for " + self.getDisplayName().toUpperCase() +
+                    " is invalid: " + JSON.stringify(value) + "\n" +
+                    "Use one of: " + Object.keys(choices).map(function (choice) {
+                        return JSON.stringify(choice);
                     }).join(', ')
                 );
             return choices[value];
@@ -973,11 +973,13 @@ exports.Option.prototype.validate = function (validate) {
  * @returns {Option} this
  */
 exports.Option.prototype.input = function () {
+    // TODO encoding
     return this.set().validate(function (value) {
-        if (value == "-")
-            return system.stdin;
-        else
-            return file.open(value, 'r');
+        if (value == "-") {
+            return process.stdin;
+        } else {
+            return fs.createReadStream(value);
+        }
     });
 };
 
@@ -989,11 +991,12 @@ exports.Option.prototype.input = function () {
  * @returns {Option} this
  */
 exports.Option.prototype.output = function () {
+    // TODO encoding
     return this.set().validate(function (value) {
         if (value == "-")
-            return system.stdout;
+            return process.stdout;
         else
-            return file.open(value, 'w');
+            return fs.createWriteStream(value);
     });
 };
 
@@ -1005,7 +1008,7 @@ exports.Option.prototype.output = function () {
 exports.Option.prototype.number = function () {
     return this.set().validate(function (value) {
         var result = +value;
-        if (isNaN(result))
+        if (result !== result) // isNaN
             throw new exports.UsageError("not a number");
         return result;
     });
@@ -1019,7 +1022,7 @@ exports.Option.prototype.number = function () {
 exports.Option.prototype.oct = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 8);
-        if (isNaN(result))
+        if (result !== result) // isNaN
             throw new exports.UsageError("not an octal value");
         return result;
     });
@@ -1033,7 +1036,7 @@ exports.Option.prototype.oct = function () {
 exports.Option.prototype.hex = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 16);
-        if (isNaN(result))
+        if (result !== result) // isNaN
             throw new exports.UsageError("not an hex value");
         return result;
     });
@@ -1047,7 +1050,7 @@ exports.Option.prototype.hex = function () {
 exports.Option.prototype.integer = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 10);
-        if (isNaN(result) || result !== +value)
+        if (result !== result || result !== +value)
             throw new exports.UsageError("not an integer");
         return result;
     });
@@ -1121,7 +1124,7 @@ exports.Option.prototype.inverse = function () {
         this._long.forEach(function (__) {
             args.push('--no-' + __);
         });
-        if (this.getName()) 
+        if (this.getName())
             args.push(this.getName());
     }
     var parser = this._parser;
@@ -1243,7 +1246,7 @@ exports.Group.prototype.group = function (name) {
 
 /**
  * Returns the group's parent group or parser.
- * 
+ *
  * Useful for chaining commands.
  *
  * @returns parent parser or group
@@ -1251,6 +1254,33 @@ exports.Group.prototype.group = function (name) {
 exports.Group.prototype.end = function () {
     return this._parent;
 };
+
+function isEmpty(object) {
+    for (var name in object) {
+        if (hasOwnProperty.call(object, name)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function range(length) {
+    var values = [];
+    for (var index = 0; index < length; index++) {
+        values.push(index);
+    }
+    return values;
+}
+
+function copy(object) {
+    var duplicate = {};
+    for (var name in object) {
+        if (hasOwnProperty.call(object, name)) {
+            duplicate[name] = object[name];
+        }
+    }
+    return duplicate;
+}
 
 exports.Parser.prototype.Parser = exports.Parser;
 exports.Parser.prototype.Option = exports.Option;
