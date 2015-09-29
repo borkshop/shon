@@ -7,14 +7,14 @@ var fs = require('fs');
 var path = require('path');
 
 exports.UsageError = function (message) {
-    this.name = "UsageError";
+    this.name = 'UsageError';
     this.message = message;
 };
 
 exports.UsageError.prototype = Object.create(Error.prototype);
 
 exports.ConfigurationError = function (message) {
-    this.name = "ConfigurationError";
+    this.name = 'ConfigurationError';
     this.message = message;
 };
 
@@ -112,7 +112,7 @@ exports.Parser.prototype.command = function (name, handler) {
             return parser;
         };
         return parser;
-    } else if (typeof handler == "string") {
+    } else if (typeof handler == 'string') {
         this._commands[name] = function () {
             return require(handler).parser;
         };
@@ -184,7 +184,7 @@ exports.Parser.prototype.interleaved = function (value) {
  */
 exports.Parser.prototype.act = function (args, options) {
     if (!this._action) {
-        this.error(options, "Not yet implemented.");
+        this.error(options, 'Not yet implemented.');
         this.exit(-1);
     }
     options.acted = true;
@@ -258,25 +258,25 @@ exports.Parser.prototype.printHelp = function (options) {
         if (!hasOwnProperty.call(this._commands, args[0])) {
             this.error(options, JSON.stringify(args[0]) + ' is not a command.');
             this.printCommands(options);
-            this.exit(options);
+            this.exit(-1);
         } else {
             args.splice(1, 0, '--help');
             this._commands[args[0]]().act(args, options);
-            this.exit(options);
+            this.exit(-1);
         }
     } else {
         this.printUsage(options);
         if (this._help)
-            this.print('' + this._help + '');
+            this.print(this._help);
         this.printCommands(options);
         this.printOptions(options);
-        this.exit(options);
+        this.exit(-1);
     }
 };
 
 exports.Parser.prototype.printUsage = function (options) {
     this.print(
-        'Usage: \0bold(\0blue(' + path.basename(options.command || '<unknown>') +
+        'Usage: ' + path.basename(options.command || '<unknown>') +
         (!this._interleaved ?  ' [OPTIONS]' : '' ) +
         (!isEmpty(this._commands) ?
             ' COMMAND' :
@@ -300,7 +300,7 @@ exports.Parser.prototype.printUsage = function (options) {
         (this._usage ?
             ' ' + this._usage :
             ''
-        ) + "\0)\0)"
+        ) + ''
     );
 };
 
@@ -310,13 +310,13 @@ exports.Parser.prototype.printCommands = function (options) {
         var name = names[index];
         var command = this._commands[name];
         var parser = command();
-        this.print('  \0bold(\0green(' + name + '\0)\0)' + (
+        this.print('  ' + name + '' + (
             parser._help ?
             (
                 ': ' +
                 (
                     parser._action?
-                    '': '\0red(NYI\0): '
+                    '': 'Not yet implemented: '
                 ) +
                 parser._help
             ) : ''
@@ -338,7 +338,7 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
         return;
 
     if (option instanceof exports.Group) {
-        self.print(indent + ' \0yellow(' + option._name + ':\0)');
+        self.print(indent + ' ' + option._name + ':');
         var parent = option;
         option._options.forEach(function (option) {
             return self.printOption(options, option, depth + 1, parent);
@@ -349,18 +349,18 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
     var message = [];
     if (option._short.length)
         message.push(option._short.map(function (_short) {
-            return ' \0bold(\0green(-' + _short + '\0)\0)';
+            return ' -' + _short;
         }).join(''));
     if (option._long.length)
         message.push(option._long.map(function (_long) {
-            return ' \0bold(\0green(--' + _long + '\0)\0)';
+            return ' --' + _long;
         }).join(''));
     if (option._action && option._action.length > 2)
         message.push(
             ' ' +
             range(option._action.length - 2)
             .map(function () {
-                return '\0bold(\0green(' + option.getDisplayName().toUpperCase() + '\0)\0)';
+                return option.getDisplayName().toUpperCase();
             }).join(' ')
         );
     if (option._help)
@@ -370,10 +370,10 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
         if (choices && typeof choices.length !== 'number') {
             choices = Object.keys(choices);
         }
-        message.push(' \0bold(\0blue((' + choices.join(', ') + ')\0)\0)');
+        message.push(' (' + choices.join(', ') + ')');
     }
     if (option._halt)
-        message.push(' \0bold(\0blue((final option)\0)\0)');
+        message.push(' (final option)');
     self.print(indent + message.join(''));
 
 };
@@ -392,7 +392,7 @@ exports.Parser.prototype.error = function (options, message) {
             arguments
         );
     } else {
-        this.print('\0red(' + message + '\0)');
+        this.print('' + message + '');
         this.exit();
     }
 };
@@ -404,8 +404,7 @@ exports.Parser.prototype.exit = function (status) {
             arguments
         );
     } else {
-        // FIXME: exit is sometimes called with the "options" object as the "status" argument. Why?
-        process.exit(typeof status == "number" ? status : 1);
+        process.exit(typeof status == 'number' ? status : 1);
     }
 };
 
@@ -429,7 +428,7 @@ exports.Parser.prototype.check = function () {
             return;
         if (!option._action) {
             throw new exports.ConfigurationError(
-                "No action associated with the option"
+                'No action associated with the option'
                 // TODO repr(option.getDisplayName())
             );
         }
@@ -501,7 +500,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
     // walk args
     ARGS: while (args.length) {
         var arg = args.shift();
-        if (arg == "--") {
+        if (arg == '--') {
             break;
 
         } else if (/^--/.test(arg)) {
@@ -520,8 +519,8 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
                 if (!option._action) {
                     self.error(
                         options,
-                        "Programmer error: The " + word +
-                        " option does not have an associated action."
+                        'Programmer error: The ' + word +
+                        ' option does not have an associated action.'
                     );
                 }
 
@@ -660,7 +659,7 @@ exports.Argument.prototype.optional = function (value) {
  *          action: function () { ... },
  *          _: 'l',         // short name
  *          __: 'list',     // long name
- *          help: "list all packages"
+ *          help: 'list all packages'
  *      });
  * </code>
  *
@@ -669,20 +668,20 @@ exports.Argument.prototype.optional = function (value) {
  *      new Option(parser, function () { ... });
  * </code>
  *
- * Strings starting with "-" and "--" are short and long names respectivey.
+ * Strings starting with '-' and '--' are short and long names respectivey.
  * <code>
- *      new Option(parser, "-l", "--list");
+ *      new Option(parser, '-l', '--list');
  * </code>
  *
  * A string with spaces is the help message.
  * <code>
- *      new Option(parser, "-l", "--list", "list all packages");
+ *      new Option(parser, '-l', '--list', 'list all packages');
  * </code>
  *
  * A one-word string is the display name and the option name. An additional
  * one-word string is the option name.
  * <code>
- *      new Option(parser, "-d", "--delete", "file", "del");
+ *      new Option(parser, '-d', '--delete', 'file', 'del');
  *      // file is the display name and del is the option name
  * </code>
  *
@@ -698,9 +697,9 @@ exports.Option = function (parser, args) {
     this._short = [];
     for (var index = 0; index < args.length; index++) {
         var arg = args[index];
-        if (typeof arg == "function") {
+        if (typeof arg == 'function') {
             self.action(arg);
-        } else if (typeof arg !== "string") {
+        } else if (typeof arg !== 'string') {
             for (var name in arg) {
                 var value = arg[name];
                 self[name](value);
@@ -714,7 +713,7 @@ exports.Option = function (parser, args) {
             arg = arg.match(/^-(.)/)[1];
             self._(arg);
         } else if (/^-/.test(arg)) {
-            throw new Error("option names with one dash can only have one letter.");
+            throw new Error('option names with one dash can only have one letter.');
         } else {
             if (!self._name) {
                 self.name(arg);
@@ -725,7 +724,7 @@ exports.Option = function (parser, args) {
         }
     }
     if (!(self._short.length || self._long.length || self._name))
-        throw new exports.ConfigurationError("Option has no name.");
+        throw new exports.ConfigurationError('Option has no name.');
     return this;
 };
 
@@ -802,7 +801,7 @@ exports.Option.prototype.getName = function () {
     if (this._short.length > 0) {
         return this._short[0];
     }
-    throw new Error("Programmer error: unnamed option");
+    throw new Error('Programmer error: unnamed option');
 };
 
 /**
@@ -814,7 +813,7 @@ exports.Option.prototype.getName = function () {
  */
 exports.Option.prototype.action = function (action) {
     var self = this;
-    if (typeof action == "string") {
+    if (typeof action == 'string') {
         this._action = self._parser[action];
     } else {
         this._action = action;
@@ -842,7 +841,7 @@ exports.Option.prototype.set = function (value) {
             options[name] = value;
         });
     else
-        throw new exports.UsageError("Option().set takes 0 or 1 arguments");
+        throw new exports.UsageError('Option().set takes 0 or 1 arguments');
 };
 
 /**
@@ -902,9 +901,9 @@ exports.Option.prototype.choices = function (choices) {
         return this.validate(function (value) {
             if (choices.indexOf(value) < 0)
                 throw new exports.UsageError(
-                    "choice for " + self.getDisplayName().toUpperCase() +
-                    " is invalid: " + JSON.stringify(value) + "\n" +
-                    "Use one of: " + choices.map(function (choice) {
+                    'choice for ' + self.getDisplayName().toUpperCase() +
+                    ' is invalid: ' + JSON.stringify(value) + '\n' +
+                    'Use one of: ' + choices.map(function (choice) {
                         return JSON.stringify(choice);
                     }).join(', ')
                 );
@@ -914,9 +913,9 @@ exports.Option.prototype.choices = function (choices) {
         return this.validate(function (value) {
             if (!hasOwnProperty.call(choices, value))
                 throw new exports.UsageError(
-                    "choice for " + self.getDisplayName().toUpperCase() +
-                    " is invalid: " + JSON.stringify(value) + "\n" +
-                    "Use one of: " + Object.keys(choices).map(function (choice) {
+                    'choice for ' + self.getDisplayName().toUpperCase() +
+                    ' is invalid: ' + JSON.stringify(value) + '\n' +
+                    'Use one of: ' + Object.keys(choices).map(function (choice) {
                         return JSON.stringify(choice);
                     }).join(', ')
                 );
@@ -968,14 +967,14 @@ exports.Option.prototype.validate = function (validate) {
 /**
  * The option will take an input file.
  *
- * If the given file name is "-", stdin is used.
+ * If the given file name is '-', stdin is used.
  *
  * @returns {Option} this
  */
 exports.Option.prototype.input = function () {
     // TODO encoding
     return this.set().validate(function (value) {
-        if (value == "-") {
+        if (value == '-') {
             return process.stdin;
         } else {
             return fs.createReadStream(value);
@@ -986,14 +985,14 @@ exports.Option.prototype.input = function () {
 /**
  * The option will take an output file.
  *
- * If the given file name is "-", stdout is used.
+ * If the given file name is '-', stdout is used.
  *
  * @returns {Option} this
  */
 exports.Option.prototype.output = function () {
     // TODO encoding
     return this.set().validate(function (value) {
-        if (value == "-")
+        if (value == '-')
             return process.stdout;
         else
             return fs.createWriteStream(value);
@@ -1009,7 +1008,7 @@ exports.Option.prototype.number = function () {
     return this.set().validate(function (value) {
         var result = +value;
         if (result !== result) // isNaN
-            throw new exports.UsageError("not a number");
+            throw new exports.UsageError('not a number');
         return result;
     });
 };
@@ -1023,7 +1022,7 @@ exports.Option.prototype.oct = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 8);
         if (result !== result) // isNaN
-            throw new exports.UsageError("not an octal value");
+            throw new exports.UsageError('not an octal value');
         return result;
     });
 };
@@ -1037,7 +1036,7 @@ exports.Option.prototype.hex = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 16);
         if (result !== result) // isNaN
-            throw new exports.UsageError("not an hex value");
+            throw new exports.UsageError('not an hex value');
         return result;
     });
 };
@@ -1051,7 +1050,7 @@ exports.Option.prototype.integer = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 10);
         if (result !== result || result !== +value)
-            throw new exports.UsageError("not an integer");
+            throw new exports.UsageError('not an integer');
         return result;
     });
 };
@@ -1065,7 +1064,7 @@ exports.Option.prototype.natural = function () {
     return this.set().validate(function (value) {
         var result = value >>> 0;
         if (result !== +value || result < 0)
-            throw new exports.UsageError("not a natural number");
+            throw new exports.UsageError('not a natural number');
         return result;
     });
 };
@@ -1079,7 +1078,7 @@ exports.Option.prototype.whole = function () {
     return this.set().validate(function (value) {
         var result = value >>> 0;
         if (result !== +value || result < 1)
-            throw new exports.UsageError("not a whole number");
+            throw new exports.UsageError('not a whole number');
         return result;
     });
 };
