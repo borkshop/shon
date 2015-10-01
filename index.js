@@ -6,26 +6,26 @@
 var fs = require('fs');
 var path = require('path');
 
-exports.UsageError = function (message) {
+function UsageError(message) {
     this.name = 'UsageError';
     this.message = message;
-};
+}
 
-exports.UsageError.prototype = Object.create(Error.prototype);
+UsageError.prototype = Object.create(Error.prototype);
 
-exports.ConfigurationError = function (message) {
+function ConfigurationError(message) {
     this.name = 'ConfigurationError';
     this.message = message;
-};
+}
 
-exports.ConfigurationError.prototype = Object.create(Error.prototype);
+ConfigurationError.prototype = Object.create(Error.prototype);
 
 /**
  * Create a new command line argument parser.
  *
  * @constructor
  */
-exports.Parser = function () {
+function Parser() {
     this._options = [];
     this._def = {};
     this._long = {};
@@ -34,7 +34,7 @@ exports.Parser = function () {
     this._args = [];
     this._vargs = undefined;
     this._interleaved = false;
-};
+}
 
 /**
  * Add an option to the parser.
@@ -43,7 +43,7 @@ exports.Parser = function () {
  *
  * @returns {Option} the new Option object
  */
-exports.Parser.prototype.option = function () {
+Parser.prototype.option = function () {
     var option = new this.Option(this, arguments);
     this._options.push(option);
     return option;
@@ -55,7 +55,7 @@ exports.Parser.prototype.option = function () {
  * @param {String} name     name of the group
  * @returns {Group}         {@link Group} object representing the group
  */
-exports.Parser.prototype.group = function (name) {
+Parser.prototype.group = function (name) {
     var group = new this.Group(this, this, name);
     this._options.push(group);
     return group;
@@ -68,7 +68,7 @@ exports.Parser.prototype.group = function (name) {
  * @param          value    default value for the key
  * @returns {Parser}        this
  */
-exports.Parser.prototype.def = function (name, value) {
+Parser.prototype.def = function (name, value) {
     this._def[name] = value;
     return this;
 };
@@ -80,7 +80,7 @@ exports.Parser.prototype.def = function (name, value) {
  *
  * @param {Object} options  parser state
  */
-exports.Parser.prototype.reset = function (options) {
+Parser.prototype.reset = function (options) {
     var self = this;
     for (var name in this._def) {
         if (hasOwnProperty.call(this._def, name) && !hasOwnProperty.call(options, name))
@@ -104,10 +104,10 @@ exports.Parser.prototype.reset = function (options) {
  * @returns {Parser}            if no handler was given or a parser action was
  *                              given, returns the Parser for the sub-command
  */
-exports.Parser.prototype.command = function (name, handler) {
+Parser.prototype.command = function (name, handler) {
     var parent = this;
     if (!handler) {
-        var parser = new exports.Parser();
+        var parser = new Parser();
         this._commands[name] = function () {
             return parser;
         };
@@ -136,8 +136,8 @@ exports.Parser.prototype.command = function (name, handler) {
  * @param {String} name     name of the argument
  * @returns {Argument}      {@link Argument} object reprsenting the argument
  */
-exports.Parser.prototype.arg = function (name) {
-    var argument = new exports.Argument(this).name(name);
+Parser.prototype.arg = function (name) {
+    var argument = new Argument(this).name(name);
     this._args.push(argument);
     return argument;
 };
@@ -151,8 +151,8 @@ exports.Parser.prototype.arg = function (name) {
  * @param {String} name     name of the arguments
  * @returns {Argument}      {@link Argument} object representing the argument
  */
-exports.Parser.prototype.args = function (name) {
-    var argument = new exports.Argument(this).name(name);
+Parser.prototype.args = function (name) {
+    var argument = new Argument(this).name(name);
     this._vargs = argument;
     return argument;
 };
@@ -165,7 +165,7 @@ exports.Parser.prototype.args = function (name) {
  * @param {Boolean} [value=true]    true to allow interleaved arguments
  * @returns {Parser}                this
  */
-exports.Parser.prototype.interleaved = function (value) {
+Parser.prototype.interleaved = function (value) {
     if (value === undefined)
         value = true;
     this._interleaved = value;
@@ -182,7 +182,7 @@ exports.Parser.prototype.interleaved = function (value) {
  * @param {String[]} args       arguments to parse
  * @param {Option[]} options    result of the parent parser
  */
-exports.Parser.prototype.act = function (args, options) {
+Parser.prototype.act = function (args, options) {
     if (!this._action) {
         this.error(options, 'Not yet implemented.');
         this.exit(-1);
@@ -203,7 +203,7 @@ exports.Parser.prototype.act = function (args, options) {
  * @param {Function} action     the action to execute
  * @returns {Parser}            this
  */
-exports.Parser.prototype.action = function (action) {
+Parser.prototype.action = function (action) {
     if (this._action) {
         action = (function (previous, next) {
             return function () {
@@ -225,7 +225,7 @@ exports.Parser.prototype.action = function (action) {
  *
  * @returns {Parser} this
  */
-exports.Parser.prototype.helpful = function () {
+Parser.prototype.helpful = function () {
     var self = this;
     this.option('-h', '--help')
         .help('displays usage information')
@@ -240,17 +240,17 @@ exports.Parser.prototype.helpful = function () {
     return this;
 };
 
-exports.Parser.prototype.usage = function (usage) {
+Parser.prototype.usage = function (usage) {
     this._usage = usage;
     return this;
 };
 
-exports.Parser.prototype.help = function (help) {
+Parser.prototype.help = function (help) {
     this._help = help;
     return this;
 };
 
-exports.Parser.prototype.printHelp = function (options) {
+Parser.prototype.printHelp = function (options) {
     var args = options.args || [];
     if (args.length) {
         // parse args for deep help
@@ -274,7 +274,7 @@ exports.Parser.prototype.printHelp = function (options) {
     }
 };
 
-exports.Parser.prototype.printUsage = function (options) {
+Parser.prototype.printUsage = function (options) {
     this.print(
         'Usage: ' + path.basename(options.command || '<unknown>') +
         (!this._interleaved ?  ' [OPTIONS]' : '' ) +
@@ -304,7 +304,7 @@ exports.Parser.prototype.printUsage = function (options) {
     );
 };
 
-exports.Parser.prototype.printCommands = function (options) {
+Parser.prototype.printCommands = function (options) {
     var names = Object.keys(this._commands);
     for (var index = 0; index < names.length; index++) {
         var name = names[index];
@@ -324,7 +324,7 @@ exports.Parser.prototype.printCommands = function (options) {
     }
 };
 
-exports.Parser.prototype.printOption = function (options, option, depth, parent) {
+Parser.prototype.printOption = function (options, option, depth, parent) {
     var self = this;
     depth = depth || 0;
     var indent = '';
@@ -337,7 +337,7 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
     if (option._group !== parent)
         return;
 
-    if (option instanceof exports.Group) {
+    if (option instanceof Group) {
         self.print(indent + ' ' + option._name + ':');
         var parent = option;
         option._options.forEach(function (option) {
@@ -378,14 +378,14 @@ exports.Parser.prototype.printOption = function (options, option, depth, parent)
 
 };
 
-exports.Parser.prototype.printOptions = function (options) {
+Parser.prototype.printOptions = function (options) {
     var self = this;
     self._options.forEach(function (option) {
         self.printOption(options, option);
     });
 };
 
-exports.Parser.prototype.error = function (options, message) {
+Parser.prototype.error = function (options, message) {
     if (this._parser) {
         this._parser.error.apply(
             this._parser,
@@ -397,7 +397,7 @@ exports.Parser.prototype.error = function (options, message) {
     }
 };
 
-exports.Parser.prototype.exit = function (status) {
+Parser.prototype.exit = function (status) {
     if (this._parser) {
         this._parser.exit.apply(
             this._parser,
@@ -408,7 +408,7 @@ exports.Parser.prototype.exit = function (status) {
     }
 };
 
-exports.Parser.prototype.print = function () {
+Parser.prototype.print = function () {
     if (this._parser) {
         this._parser.print.apply(
             this._parser,
@@ -420,14 +420,14 @@ exports.Parser.prototype.print = function () {
 };
 
 // verifies that the parser is fully configured
-exports.Parser.prototype.check = function () {
+Parser.prototype.check = function () {
     // make sure all options have associated actions
     var self = this;
     self._options.forEach(function (option) {
         if (!(option instanceof self.Option))
             return;
         if (!option._action) {
-            throw new exports.ConfigurationError(
+            throw new ConfigurationError(
                 'No action associated with the option'
                 // TODO repr(option.getDisplayName())
             );
@@ -447,7 +447,7 @@ exports.Parser.prototype.check = function () {
  *                                           this.interleaved
  * @returns {Object}                         final parser state
  */
-exports.Parser.prototype.parse = function (args, options, noCommand, allowInterleaved) {
+Parser.prototype.parse = function (args, options, noCommand, allowInterleaved) {
 
     // TODO break this into sub-functions
     // TODO wrap with a try catch and print the progress through the arguments
@@ -619,7 +619,7 @@ exports.Parser.prototype.parse = function (args, options, noCommand, allowInterl
  * @constructor
  * @param {Parser} parser   the parent parser
  */
-exports.Argument = function (parser) {
+function Argument(parser) {
     this._parser = parser;
     return this;
 };
@@ -630,7 +630,7 @@ exports.Argument = function (parser) {
  * @param {String} name     name of the parser
  * @returns {Argument}      this
  */
-exports.Argument.prototype.name = function (name) {
+Argument.prototype.name = function (name) {
     this._name = name;
     return this;
 };
@@ -641,7 +641,7 @@ exports.Argument.prototype.name = function (name) {
  * @param {Boolean} [value=true]    true to make this optional
  * @returns {Argument}              this
  */
-exports.Argument.prototype.optional = function (value) {
+Argument.prototype.optional = function (value) {
     if (value === undefined)
         value = true;
     this._optional = value;
@@ -687,7 +687,7 @@ exports.Argument.prototype.optional = function (value) {
  *
  * @param {Parser} parser       the owning parser
  */
-exports.Option = function (parser, args) {
+function Option(parser, args) {
     var self = this;
     this._parser = parser;
     this._validate = function (value) {
@@ -724,7 +724,7 @@ exports.Option = function (parser, args) {
         }
     }
     if (!(self._short.length || self._long.length || self._name))
-        throw new exports.ConfigurationError('Option has no name.');
+        throw new ConfigurationError('Option has no name.');
     return this;
 };
 
@@ -734,7 +734,7 @@ exports.Option = function (parser, args) {
  * @param {String} letter   the character for the option
  * @returns {Option}        this
  */
-exports.Option.prototype._ = function (letter) {
+Option.prototype._ = function (letter) {
     this._short.push(letter);
     this._parser._short[letter] = this;
     return this;
@@ -746,7 +746,7 @@ exports.Option.prototype._ = function (letter) {
  * @param {String} word     the word for the long option
  * @returns {Option}        this
  */
-exports.Option.prototype.__ = function (word) {
+Option.prototype.__ = function (word) {
     this._long.push(word);
     this._parser._long[word] = this;
     return this;
@@ -760,7 +760,7 @@ exports.Option.prototype.__ = function (word) {
  * @param {String} name     name of the option
  * @returns {Option}        this
  */
-exports.Option.prototype.name = function (name) {
+Option.prototype.name = function (name) {
     this._name = name;
     return this;
 };
@@ -774,7 +774,7 @@ exports.Option.prototype.name = function (name) {
  * @param {String} displayName      new display name
  * @returns {Option}                this
  */
-exports.Option.prototype.displayName = function (displayName) {
+Option.prototype.displayName = function (displayName) {
     this._displayName = displayName;
     return this;
 };
@@ -782,7 +782,7 @@ exports.Option.prototype.displayName = function (displayName) {
 /**
  * @returns {String} the display name
  */
-exports.Option.prototype.getDisplayName = function () {
+Option.prototype.getDisplayName = function () {
     if (this._displayName)
         return this._displayName;
     return this.getName();
@@ -791,7 +791,7 @@ exports.Option.prototype.getDisplayName = function () {
 /**
  * @returns {String} the name
  */
-exports.Option.prototype.getName = function () {
+Option.prototype.getName = function () {
     if (this._name) {
         return this._name;
     }
@@ -811,7 +811,7 @@ exports.Option.prototype.getName = function () {
  *                      function in the parser
  * @returns {Option}    this
  */
-exports.Option.prototype.action = function (action) {
+Option.prototype.action = function (action) {
     var self = this;
     if (typeof action == 'string') {
         this._action = self._parser[action];
@@ -830,7 +830,7 @@ exports.Option.prototype.action = function (action) {
  * @param value         desired value
  * @returns {Option}    this
  */
-exports.Option.prototype.set = function (value) {
+Option.prototype.set = function (value) {
     var option = this;
     if (arguments.length == 0)
         return this.action(function (options, name, value) {
@@ -841,7 +841,7 @@ exports.Option.prototype.set = function (value) {
             options[name] = value;
         });
     else
-        throw new exports.UsageError('Option().set takes 0 or 1 arguments');
+        throw new UsageError('Option().set takes 0 or 1 arguments');
 };
 
 /**
@@ -851,7 +851,7 @@ exports.Option.prototype.set = function (value) {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.push = function () {
+Option.prototype.push = function () {
     var option = this;
     return this.def([]).action(function (options, name, value) {
         options[name].push(option._validate.call(
@@ -867,7 +867,7 @@ exports.Option.prototype.push = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.inc = function () {
+Option.prototype.inc = function () {
     return this.def(0).action(function (options, name) {
         options[name]++;
     });
@@ -879,7 +879,7 @@ exports.Option.prototype.inc = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.dec = function () {
+Option.prototype.dec = function () {
     return this.def(0).action(function (options, name) {
         options[name]--;
     });
@@ -893,14 +893,14 @@ exports.Option.prototype.dec = function () {
  *                the value of the option
  * @returns {Option} this
  */
-exports.Option.prototype.choices = function (choices) {
+Option.prototype.choices = function (choices) {
     this.set();
     this._choices = choices;
     var self = this;
     if (typeof choices.length === 'number') {
         return this.validate(function (value) {
             if (choices.indexOf(value) < 0)
-                throw new exports.UsageError(
+                throw new UsageError(
                     'choice for ' + self.getDisplayName().toUpperCase() +
                     ' is invalid: ' + JSON.stringify(value) + '\n' +
                     'Use one of: ' + choices.map(function (choice) {
@@ -912,7 +912,7 @@ exports.Option.prototype.choices = function (choices) {
     } else {
         return this.validate(function (value) {
             if (!hasOwnProperty.call(choices, value))
-                throw new exports.UsageError(
+                throw new UsageError(
                     'choice for ' + self.getDisplayName().toUpperCase() +
                     ' is invalid: ' + JSON.stringify(value) + '\n' +
                     'Use one of: ' + Object.keys(choices).map(function (choice) {
@@ -932,7 +932,7 @@ exports.Option.prototype.choices = function (choices) {
  * @param value      new default value
  * @returns {Option} this
  */
-exports.Option.prototype.def = function (value) {
+Option.prototype.def = function (value) {
     if (this._def === undefined)
         this._def = value;
     return this;
@@ -948,7 +948,7 @@ exports.Option.prototype.def = function (value) {
  *                              value unchanged; can throw {@link UsageError}
  * @returns {Option}            this
  */
-exports.Option.prototype.validate = function (validate) {
+Option.prototype.validate = function (validate) {
     var current = this._validate;
     if (this._validate) {
         validate = (function (previous) {
@@ -971,7 +971,7 @@ exports.Option.prototype.validate = function (validate) {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.input = function () {
+Option.prototype.input = function () {
     // TODO encoding
     return this.set().validate(function (value) {
         if (value == '-') {
@@ -989,7 +989,7 @@ exports.Option.prototype.input = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.output = function () {
+Option.prototype.output = function () {
     // TODO encoding
     return this.set().validate(function (value) {
         if (value == '-')
@@ -1004,11 +1004,11 @@ exports.Option.prototype.output = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.number = function () {
+Option.prototype.number = function () {
     return this.set().validate(function (value) {
         var result = +value;
         if (result !== result) // isNaN
-            throw new exports.UsageError('not a number');
+            throw new UsageError('not a number');
         return result;
     });
 };
@@ -1018,11 +1018,11 @@ exports.Option.prototype.number = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.oct = function () {
+Option.prototype.oct = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 8);
         if (result !== result) // isNaN
-            throw new exports.UsageError('not an octal value');
+            throw new UsageError('not an octal value');
         return result;
     });
 };
@@ -1032,11 +1032,11 @@ exports.Option.prototype.oct = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.hex = function () {
+Option.prototype.hex = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 16);
         if (result !== result) // isNaN
-            throw new exports.UsageError('not an hex value');
+            throw new UsageError('not an hex value');
         return result;
     });
 };
@@ -1046,11 +1046,11 @@ exports.Option.prototype.hex = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.integer = function () {
+Option.prototype.integer = function () {
     return this.set().validate(function (value) {
         var result = parseInt(value, 10);
         if (result !== result || result !== +value)
-            throw new exports.UsageError('not an integer');
+            throw new UsageError('not an integer');
         return result;
     });
 };
@@ -1060,11 +1060,11 @@ exports.Option.prototype.integer = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.natural = function () {
+Option.prototype.natural = function () {
     return this.set().validate(function (value) {
         var result = value >>> 0;
         if (result !== +value || result < 0)
-            throw new exports.UsageError('not a natural number');
+            throw new UsageError('not a natural number');
         return result;
     });
 };
@@ -1074,11 +1074,11 @@ exports.Option.prototype.natural = function () {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.whole = function () {
+Option.prototype.whole = function () {
     return this.set().validate(function (value) {
         var result = value >>> 0;
         if (result !== +value || result < 1)
-            throw new exports.UsageError('not a whole number');
+            throw new UsageError('not a whole number');
         return result;
     });
 };
@@ -1089,13 +1089,13 @@ exports.Option.prototype.whole = function () {
  * @param {Boolean} def     default value
  * @returns {Option}        this
  */
-exports.Option.prototype.bool = function (def) {
+Option.prototype.bool = function (def) {
     if (def === undefined)
         def = true;
     return this.def(!def).set(!!def);
 };
 
-exports.Option.prototype.todo = function (command, value) {
+Option.prototype.todo = function (command, value) {
     this._parser.def('todo', []);
     command = command || this.getName();
     if (value)
@@ -1113,7 +1113,7 @@ exports.Option.prototype.todo = function (command, value) {
  *
  * @returns {Option} this
  */
-exports.Option.prototype.inverse = function () {
+Option.prototype.inverse = function () {
     var args = arguments;
     if (!args.length) {
         args = [];
@@ -1140,7 +1140,7 @@ exports.Option.prototype.inverse = function () {
  * @param {String} text     the help text
  * @returns {Option}        this
  */
-exports.Option.prototype.help = function (text) {
+Option.prototype.help = function (text) {
     this._help = text;
     return this;
 };
@@ -1153,7 +1153,7 @@ exports.Option.prototype.help = function (text) {
  * @param {Boolean} [value=true]    true to make this option final
  * @returns {Option}                this
  */
-exports.Option.prototype.halt = function (value) {
+Option.prototype.halt = function (value) {
     if (value == undefined)
         value = true;
     this._halt = value;
@@ -1168,7 +1168,7 @@ exports.Option.prototype.halt = function (value) {
  * @param {Boolean} [value=true]    true to make this option hidden
  * @returns {Option}                this
  */
-exports.Option.prototype.hidden = function (value) {
+Option.prototype.hidden = function (value) {
     if (value === undefined)
         value = true;
     this._hidden = value;
@@ -1182,14 +1182,14 @@ exports.Option.prototype.hidden = function (value) {
  *
  * @returns {Parser} owning parser
  */
-exports.Option.prototype.end = function () {
+Option.prototype.end = function () {
     return this._parser;
 };
 
 /**
  * Helper function equivalent to end().option(...).
  */
-exports.Option.prototype.option = function () {
+Option.prototype.option = function () {
     return this.end().option.apply(this, arguments);
 };
 
@@ -1198,7 +1198,7 @@ exports.Option.prototype.option = function () {
  *
  * @returns {Parser} parent parser
  */
-exports.Parser.prototype.end = function () {
+Parser.prototype.end = function () {
     return this._parser;
 };
 
@@ -1209,7 +1209,7 @@ exports.Parser.prototype.end = function () {
  * @param          parent   parent parser or group
  * @param {String} name     name of the group
  */
-exports.Group = function (parser, parent, name) {
+function Group(parser, parent, name) {
     this._name = name;
     this._parser = parser;
     this._parent = parent;
@@ -1224,7 +1224,7 @@ exports.Group = function (parser, parent, name) {
  *
  * @returns {Option} the new Option object
  */
-exports.Group.prototype.option = function () {
+Group.prototype.option = function () {
     var option = this._parser.option.apply(this._parser, arguments);
     option._group = this;
     this._options.push(option);
@@ -1237,7 +1237,7 @@ exports.Group.prototype.option = function () {
  * @param {String} name     name of the new group
  * @returns {Group}         the new group
  */
-exports.Group.prototype.group = function (name) {
+Group.prototype.group = function (name) {
     var Group = this.Group || this._parser.Group;
     var group = new Group(this._parser, this, name);
     return group;
@@ -1250,7 +1250,7 @@ exports.Group.prototype.group = function (name) {
  *
  * @returns parent parser or group
  */
-exports.Group.prototype.end = function () {
+Group.prototype.end = function () {
     return this._parent;
 };
 
@@ -1281,6 +1281,8 @@ function copy(object) {
     return duplicate;
 }
 
-exports.Parser.prototype.Parser = exports.Parser;
-exports.Parser.prototype.Option = exports.Option;
-exports.Parser.prototype.Group = exports.Group;
+Parser.prototype.Parser = Parser;
+Parser.prototype.Option = Option;
+Parser.prototype.Group = Group;
+
+module.exports = Parser;
