@@ -21,11 +21,11 @@ function ConfigurationError(message) {
 ConfigurationError.prototype = Object.create(Error.prototype);
 
 /**
- * Create a new command line argument parser.
+ * Create a new command line argument schema.
  *
  * @constructor
  */
-function Parser() {
+function Schema() {
     this._options = [];
     this._def = {};
     this._long = {};
@@ -37,13 +37,13 @@ function Parser() {
 }
 
 /**
- * Add an option to the parser.
+ * Add an option to the schema.
  *
  * Takes the same arguments as the {@link Option} constructor.
  *
  * @returns {Option} the new Option object
  */
-Parser.prototype.option = function () {
+Schema.prototype.option = function () {
     var option = new this.Option(this, arguments);
     this._options.push(option);
     return option;
@@ -55,20 +55,20 @@ Parser.prototype.option = function () {
  * @param {String} name     name of the group
  * @returns {Group}         {@link Group} object representing the group
  */
-Parser.prototype.group = function (name) {
+Schema.prototype.group = function (name) {
     var group = new this.Group(this, this, name);
     this._options.push(group);
     return group;
 };
 
 /**
- * Set default values for the parser.
+ * Set default values for the schema.
  *
  * @param {String} name     key in the result
  * @param          value    default value for the key
- * @returns {Parser}        this
+ * @returns {Schema}        this
  */
-Parser.prototype.def = function (name, value) {
+Schema.prototype.def = function (name, value) {
     this._def[name] = value;
     return this;
 };
@@ -78,9 +78,9 @@ Parser.prototype.def = function (name, value) {
  *
  * Normally, this won't be used externally.
  *
- * @param {Object} options  parser state
+ * @param {Object} options  schema state
  */
-Parser.prototype.reset = function (options) {
+Schema.prototype.reset = function (options) {
     var self = this;
     for (var name in this._def) {
         if (hasOwnProperty.call(this._def, name) && !hasOwnProperty.call(options, name))
@@ -95,48 +95,48 @@ Parser.prototype.reset = function (options) {
 };
 
 /**
- * Add a new sub-command to the parser.
+ * Add a new sub-command to the schema.
  *
  * @param {String} name         name of the sub command
- * @param          [handler]    either a module name that exports a `parser'
- *                              or a function that will be used as a parser
+ * @param          [handler]    either a module name that exports a `schema'
+ *                              or a function that will be used as a schema
  *                              action
- * @returns {Parser}            if no handler was given or a parser action was
- *                              given, returns the Parser for the sub-command
+ * @returns {Schema}            if no handler was given or a schema action was
+ *                              given, returns the Schema for the sub-command
  */
-Parser.prototype.command = function (name, handler) {
+Schema.prototype.command = function (name, handler) {
     var parent = this;
     if (!handler) {
-        var parser = new Parser();
+        var schema = new Schema();
         this._commands[name] = function () {
-            return parser;
+            return schema;
         };
-        return parser;
+        return schema;
     } else if (typeof handler == 'string') {
         this._commands[name] = function () {
-            return require(handler).parser;
+            return require(handler).schema;
         };
         return;
     } else {
-        var parser = new this.Parser();
-        parser.action(handler);
+        var schema = new this.Schema();
+        schema.action(handler);
         this._commands[name] = function () {
-            return parser;
+            return schema;
         };
-        return parser;
+        return schema;
     }
 };
 
 /**
  * Add a single positional argument to the command.
  *
- * Warning: Only used for printing the help or usage. The parser is not
+ * Warning: Only used for printing the help or usage. The schema is not
  * responsible for reading them from the command line arguments.
  *
  * @param {String} name     name of the argument
  * @returns {Argument}      {@link Argument} object reprsenting the argument
  */
-Parser.prototype.arg = function (name) {
+Schema.prototype.arg = function (name) {
     var argument = new Argument(this).name(name);
     this._args.push(argument);
     return argument;
@@ -145,13 +145,13 @@ Parser.prototype.arg = function (name) {
 /**
  * Add a variable number of arguments to the command.
  *
- * Warning: Only used for printing the help or usage. The parser is not
+ * Warning: Only used for printing the help or usage. The schema is not
  * responsible for reading them from the command line arguments.
  *
  * @param {String} name     name of the arguments
  * @returns {Argument}      {@link Argument} object representing the argument
  */
-Parser.prototype.args = function (name) {
+Schema.prototype.args = function (name) {
     var argument = new Argument(this).name(name);
     this._vargs = argument;
     return argument;
@@ -163,9 +163,9 @@ Parser.prototype.args = function (name) {
  * Disabled by default.
  *
  * @param {Boolean} [value=true]    true to allow interleaved arguments
- * @returns {Parser}                this
+ * @returns {Schema}                this
  */
-Parser.prototype.interleaved = function (value) {
+Schema.prototype.interleaved = function (value) {
     if (value === undefined)
         value = true;
     this._interleaved = value;
@@ -180,9 +180,9 @@ Parser.prototype.interleaved = function (value) {
  * Normally, this won't be used externally.
  *
  * @param {String[]} args       arguments to parse
- * @param {Option[]} options    result of the parent parser
+ * @param {Option[]} options    result of the parent schema
  */
-Parser.prototype.act = function (args, options) {
+Schema.prototype.act = function (args, options) {
     if (!this._action) {
         this.error(options, 'Not yet implemented.');
         this.exit(-1);
@@ -192,18 +192,18 @@ Parser.prototype.act = function (args, options) {
 };
 
 /**
- * Add an action to the parser.
+ * Add an action to the schema.
  *
  * If an action already exists, the new action will be executed after the
  * executing action.
  *
  * Warning: Not executed when the parse method is called. Normally used on
- * sub-command parsers only.
+ * sub-command schemas only.
  *
  * @param {Function} action     the action to execute
- * @returns {Parser}            this
+ * @returns {Schema}            this
  */
-Parser.prototype.action = function (action) {
+Schema.prototype.action = function (action) {
     if (this._action) {
         action = (function (previous, next) {
             return function () {
@@ -217,15 +217,15 @@ Parser.prototype.action = function (action) {
 };
 
 /**
- * Make the parser helpful.
+ * Make the schema helpful.
  *
  * Will add help options and if required, commands.
  *
- * Warning: Must be called last, after all parser configuration is finished.
+ * Warning: Must be called last, after all schema configuration is finished.
  *
- * @returns {Parser} this
+ * @returns {Schema} this
  */
-Parser.prototype.helpful = function () {
+Schema.prototype.helpful = function () {
     var self = this;
     this.option('-h', '--help')
         .help('displays usage information')
@@ -240,17 +240,17 @@ Parser.prototype.helpful = function () {
     return this;
 };
 
-Parser.prototype.usage = function (usage) {
+Schema.prototype.usage = function (usage) {
     this._usage = usage;
     return this;
 };
 
-Parser.prototype.help = function (help) {
+Schema.prototype.help = function (help) {
     this._help = help;
     return this;
 };
 
-Parser.prototype.printHelp = function (options) {
+Schema.prototype.printHelp = function (options) {
     var args = options.args || [];
     if (args.length) {
         // parse args for deep help
@@ -274,7 +274,7 @@ Parser.prototype.printHelp = function (options) {
     }
 };
 
-Parser.prototype.printUsage = function (options) {
+Schema.prototype.printUsage = function (options) {
     this.print(
         'Usage: ' + path.basename(options.command || '<unknown>') +
         (!this._interleaved ?  ' [OPTIONS]' : '' ) +
@@ -304,27 +304,27 @@ Parser.prototype.printUsage = function (options) {
     );
 };
 
-Parser.prototype.printCommands = function (options) {
+Schema.prototype.printCommands = function (options) {
     var names = Object.keys(this._commands);
     for (var index = 0; index < names.length; index++) {
         var name = names[index];
         var command = this._commands[name];
-        var parser = command();
+        var schema = command();
         this.print('  ' + name + '' + (
-            parser._help ?
+            schema._help ?
             (
                 ': ' +
                 (
-                    parser._action?
+                    schema._action?
                     '': 'Not yet implemented: '
                 ) +
-                parser._help
+                schema._help
             ) : ''
         ));
     }
 };
 
-Parser.prototype.printOption = function (options, option, depth, parent) {
+Schema.prototype.printOption = function (options, option, depth, parent) {
     var self = this;
     depth = depth || 0;
     var indent = '';
@@ -378,17 +378,17 @@ Parser.prototype.printOption = function (options, option, depth, parent) {
 
 };
 
-Parser.prototype.printOptions = function (options) {
+Schema.prototype.printOptions = function (options) {
     var self = this;
     self._options.forEach(function (option) {
         self.printOption(options, option);
     });
 };
 
-Parser.prototype.error = function (options, message) {
-    if (this._parser) {
-        this._parser.error.apply(
-            this._parser,
+Schema.prototype.error = function (options, message) {
+    if (this._schema) {
+        this._schema.error.apply(
+            this._schema,
             arguments
         );
     } else {
@@ -397,10 +397,10 @@ Parser.prototype.error = function (options, message) {
     }
 };
 
-Parser.prototype.exit = function (status) {
-    if (this._parser) {
-        this._parser.exit.apply(
-            this._parser,
+Schema.prototype.exit = function (status) {
+    if (this._schema) {
+        this._schema.exit.apply(
+            this._schema,
             arguments
         );
     } else {
@@ -408,10 +408,10 @@ Parser.prototype.exit = function (status) {
     }
 };
 
-Parser.prototype.print = function () {
-    if (this._parser) {
-        this._parser.print.apply(
-            this._parser,
+Schema.prototype.print = function () {
+    if (this._schema) {
+        this._schema.print.apply(
+            this._schema,
             arguments
         );
     } else {
@@ -419,8 +419,8 @@ Parser.prototype.print = function () {
     }
 };
 
-// verifies that the parser is fully configured
-Parser.prototype.check = function () {
+// verifies that the schema is fully configured
+Schema.prototype.check = function () {
     // make sure all options have associated actions
     var self = this;
     self._options.forEach(function (option) {
@@ -439,15 +439,15 @@ Parser.prototype.check = function () {
  * Parse the arguments, calling the appropriate option actions.
  *
  * @param {String[]}    [args=process.argv]  command line arguments
- * @param {Object}      [options]            parser state
+ * @param {Object}      [options]            schema state
  * @param {Boolean}     [noCommand=false]    true if sub-commands are not
  *                                           allowed
  * @param {Boolean}     [allowInterleaved]   true to allow interleaved
  *                                           arguments; overrides
  *                                           this.interleaved
- * @returns {Object}                         final parser state
+ * @returns {Object}                         final schema state
  */
-Parser.prototype.parse = function (args, options, noCommand, allowInterleaved) {
+Schema.prototype.parse = function (args, options, noCommand, allowInterleaved) {
 
     // TODO break this into sub-functions
     // TODO wrap with a try catch and print the progress through the arguments
@@ -614,20 +614,20 @@ Parser.prototype.parse = function (args, options, noCommand, allowInterleaved) {
 };
 
 /**
- * Represents positional arguments for the parser.
+ * Represents positional arguments for the schema.
  *
  * @constructor
- * @param {Parser} parser   the parent parser
+ * @param {Schema} schema   the parent schema
  */
-function Argument(parser) {
-    this._parser = parser;
+function Argument(schema) {
+    this._schema = schema;
     return this;
 };
 
 /**
  * Set the name of the argument.
  *
- * @param {String} name     name of the parser
+ * @param {String} name     name of the schema
  * @returns {Argument}      this
  */
 Argument.prototype.name = function (name) {
@@ -651,11 +651,11 @@ Argument.prototype.optional = function (value) {
 /**
  * Represents a command line option.
  *
- * Other than the parser, the arguments are read with the following rules.
+ * Other than the schema, the arguments are read with the following rules.
  *
  * Hashes contain attributes.
  * <code>
- *      new Option(parser, {
+ *      new Option(schema, {
  *          action: function () { ... },
  *          _: 'l',         // short name
  *          __: 'list',     // long name
@@ -665,31 +665,31 @@ Argument.prototype.optional = function (value) {
  *
  * A function is the option's action.
  * <code>
- *      new Option(parser, function () { ... });
+ *      new Option(schema, function () { ... });
  * </code>
  *
  * Strings starting with '-' and '--' are short and long names respectivey.
  * <code>
- *      new Option(parser, '-l', '--list');
+ *      new Option(schema, '-l', '--list');
  * </code>
  *
  * A string with spaces is the help message.
  * <code>
- *      new Option(parser, '-l', '--list', 'list all packages');
+ *      new Option(schema, '-l', '--list', 'list all packages');
  * </code>
  *
  * A one-word string is the display name and the option name. An additional
  * one-word string is the option name.
  * <code>
- *      new Option(parser, '-d', '--delete', 'file', 'del');
+ *      new Option(schema, '-d', '--delete', 'file', 'del');
  *      // file is the display name and del is the option name
  * </code>
  *
- * @param {Parser} parser       the owning parser
+ * @param {Schema} schema       the owning schema
  */
-function Option(parser, args) {
+function Option(schema, args) {
     var self = this;
-    this._parser = parser;
+    this._schema = schema;
     this._validate = function (value) {
         return value;
     };
@@ -736,7 +736,7 @@ function Option(parser, args) {
  */
 Option.prototype._ = function (letter) {
     this._short.push(letter);
-    this._parser._short[letter] = this;
+    this._schema._short[letter] = this;
     return this;
 };
 
@@ -748,7 +748,7 @@ Option.prototype._ = function (letter) {
  */
 Option.prototype.__ = function (word) {
     this._long.push(word);
-    this._parser._long[word] = this;
+    this._schema._long[word] = this;
     return this;
 };
 
@@ -808,13 +808,13 @@ Option.prototype.getName = function () {
  * Set the action executed when this option is encountered.
  *
  * @param action        either a function or a string with the name of a
- *                      function in the parser
+ *                      function in the schema
  * @returns {Option}    this
  */
 Option.prototype.action = function (action) {
     var self = this;
     if (typeof action == 'string') {
-        this._action = self._parser[action];
+        this._action = self._schema[action];
     } else {
         this._action = action;
     }
@@ -853,7 +853,7 @@ Option.prototype.set = function (value) {
  */
 Option.prototype.push = function () {
     var option = this;
-    return this.def([]).action(function (options, name, value) {
+    return this.default([]).action(function (options, name, value) {
         options[name].push(option._validate.call(
             this,
             value
@@ -868,7 +868,7 @@ Option.prototype.push = function () {
  * @returns {Option} this
  */
 Option.prototype.inc = function () {
-    return this.def(0).action(function (options, name) {
+    return this.default(0).action(function (options, name) {
         options[name]++;
     });
 };
@@ -880,7 +880,7 @@ Option.prototype.inc = function () {
  * @returns {Option} this
  */
 Option.prototype.dec = function () {
-    return this.def(0).action(function (options, name) {
+    return this.default(0).action(function (options, name) {
         options[name]--;
     });
 };
@@ -927,7 +927,7 @@ Option.prototype.choices = function (choices) {
 /**
  * Set the default value for the option.
  *
- * Overrides setting from Parser.def().
+ * Overrides setting from Schema.default().
  *
  * @param value      new default value
  * @returns {Option} this
@@ -1092,11 +1092,11 @@ Option.prototype.whole = function () {
 Option.prototype.bool = function (def) {
     if (def === undefined)
         def = true;
-    return this.def(!def).set(!!def);
+    return this.default(!def).set(!!def);
 };
 
 Option.prototype.todo = function (command, value) {
-    this._parser.def('todo', []);
+    this._schema.default('todo', []);
     command = command || this.getName();
     if (value)
         return this.action(function (options, name, value) {
@@ -1126,9 +1126,9 @@ Option.prototype.inverse = function () {
         if (this.getName())
             args.push(this.getName());
     }
-    var parser = this._parser;
-    var inverse = this._inverse = parser.option.apply(
-        parser,
+    var schema = this._schema;
+    var inverse = this._inverse = schema.option.apply(
+        schema,
         args
     ).set(!this._def).help('^ inverse');
     return this;
@@ -1176,14 +1176,14 @@ Option.prototype.hidden = function (value) {
 };
 
 /**
- * Return the option's owning parser.
+ * Return the option's owning schema.
  *
  * Useful for chaining.
  *
- * @returns {Parser} owning parser
+ * @returns {Schema} owning schema
  */
 Option.prototype.end = function () {
-    return this._parser;
+    return this._schema;
 };
 
 /**
@@ -1194,24 +1194,24 @@ Option.prototype.option = function () {
 };
 
 /**
- * Return the parser's parent parser.
+ * Return the schema's parent schema.
  *
- * @returns {Parser} parent parser
+ * @returns {Schema} parent schema
  */
-Parser.prototype.end = function () {
-    return this._parser;
+Schema.prototype.end = function () {
+    return this._schema;
 };
 
 /**
  * Represents an option group.
  *
- * @param {Parser} parser   option parser
- * @param          parent   parent parser or group
+ * @param {Schema} schema   option schema
+ * @param          parent   parent schema or group
  * @param {String} name     name of the group
  */
-function Group(parser, parent, name) {
+function Group(schema, parent, name) {
     this._name = name;
-    this._parser = parser;
+    this._schema = schema;
     this._parent = parent;
     this._options = [];
     return this;
@@ -1225,7 +1225,7 @@ function Group(parser, parent, name) {
  * @returns {Option} the new Option object
  */
 Group.prototype.option = function () {
-    var option = this._parser.option.apply(this._parser, arguments);
+    var option = this._schema.option.apply(this._schema, arguments);
     option._group = this;
     this._options.push(option);
     return option;
@@ -1238,17 +1238,17 @@ Group.prototype.option = function () {
  * @returns {Group}         the new group
  */
 Group.prototype.group = function (name) {
-    var Group = this.Group || this._parser.Group;
-    var group = new Group(this._parser, this, name);
+    var Group = this.Group || this._schema.Group;
+    var group = new Group(this._schema, this, name);
     return group;
 };
 
 /**
- * Returns the group's parent group or parser.
+ * Returns the group's parent group or schema.
  *
  * Useful for chaining commands.
  *
- * @returns parent parser or group
+ * @returns parent schema or group
  */
 Group.prototype.end = function () {
     return this._parent;
@@ -1281,8 +1281,8 @@ function copy(object) {
     return duplicate;
 }
 
-Parser.prototype.Parser = Parser;
-Parser.prototype.Option = Option;
-Parser.prototype.Group = Group;
+Schema.prototype.Schema = Schema;
+Schema.prototype.Option = Option;
+Schema.prototype.Group = Group;
 
-module.exports = Parser;
+module.exports = Schema;
