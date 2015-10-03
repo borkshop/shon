@@ -7,11 +7,15 @@
 // a higher level cursor interface, which can distinguish options from other
 // arguments.
 
+// In the context of consuming an argument, arguments may look like options,
+// e.g., --key=--value and --key --value.
+
 function Unraveler(cursor) {
     this.cursor = cursor;
     this.reservedOptions = [];
     this.reservedArgument = null;
     this.pluses = false;
+    this.likeCut = false;
     this.escaped = false;
 }
 
@@ -101,8 +105,12 @@ Unraveler.prototype.nextOption = function nextOption() {
         arg.lastIndexOf('-', 0) === 0 ||
         (this.pluses && arg.lastIndexOf('+', 0) === 0)
     ) {
-        // TODO alternate interpretation for cut-like commands
-        this.unravel(arg);
+        if (this.likeCut && arg.length > 2) {
+            this.reservedArgument = arg.slice(2);
+            return arg.slice(0, 2);
+        } else {
+            this.unravel(arg);
+        }
     }
     if (this.reservedOptions.length) {
         return this.reservedOptions.shift();

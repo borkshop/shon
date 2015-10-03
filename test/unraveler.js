@@ -96,3 +96,26 @@ test('read options as arguments', function t(assert) {
 
     assert.end();
 });
+
+test('cut-like arguments', function t(assert) {
+    var cursor = new Cursor(['-d, ', '-f:'], 0);
+    var unraveler = new Unraveler(cursor);
+    unraveler.likeCut = true;
+
+    assert.equals(unraveler.hasOption(), true, 'has an option');
+    assert.equals(unraveler.hasArgument(), true, 'could be used as an argument');
+    assert.equals(unraveler.nextOption(), '-d', 'gets -d option');
+    assert.equals(unraveler.hasArgument(), true, 'has argument');
+    assert.equals(unraveler.nextArgument(), ', ', 'gets ", " value for option');
+
+    assert.equals(unraveler.hasOption(), true, '-f is up next');
+    assert.equals(unraveler.hasArgument(), true, 'it could be used as an argument');
+    assert.equals(unraveler.nextOption(), '-f', 'gets -f option');
+    assert.equals(unraveler.hasArgument(), true, 'has argument');
+    assert.equals(unraveler.nextArgument(), ':', 'gets ":" value for option');
+
+    assert.equals(unraveler.hasOption(), false, 'no further options');
+    assert.equals(unraveler.hasArgument(), false, 'no further arguments');
+
+    assert.end();
+});
