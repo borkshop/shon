@@ -10,14 +10,14 @@ function Parser(name) {
     this.args = [];
     this.tail = null;
     this.pluses = false;
-    this.likeCut = false;
+    this.shortArguments = false;
     // TODO interleaved vs non-interleaved
 }
 
 Parser.prototype.parse = function parse(cursor, delegate, context) {
     var unraveler = new Unraveler(cursor);
     unraveler.pluses = this.pluses;
-    unraveler.likeCut = this.likeCut;
+    unraveler.shortArguments = this.shortArguments;
 
     // Interleaved arguments and options until the required arguments run dry.
     var index = 0;

@@ -15,7 +15,7 @@ function Unraveler(cursor) {
     this.reservedOptions = [];
     this.reservedArgument = null;
     this.pluses = false;
-    this.likeCut = false;
+    this.shortArguments = false;
     this.escaped = false;
 }
 
@@ -105,7 +105,7 @@ Unraveler.prototype.nextOption = function nextOption() {
         arg.lastIndexOf('-', 0) === 0 ||
         (this.pluses && arg.lastIndexOf('+', 0) === 0)
     ) {
-        if (this.likeCut && arg.length > 2) {
+        if (this.shortArguments && arg.length > 2) {
             this.reservedArgument = arg.slice(2);
             return arg.slice(0, 2);
         } else {

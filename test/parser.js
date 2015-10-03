@@ -177,7 +177,7 @@ test('push long options onto an array', function t(assert) {
 
 test('push short cut-like options onto an array', function t(assert) {
     var parser = new Parser();
-    parser.likeCut = true;
+    parser.shortArguments = true;
     var cursor = new Cursor(['-la', '-lb', '-lc'], 0);
     var delegate = new Delegate(assert, {});
     parser.options['-l'] = new ArrayParser('letters');

@@ -100,7 +100,7 @@ test('read options as arguments', function t(assert) {
 test('cut-like arguments', function t(assert) {
     var cursor = new Cursor(['-d, ', '-f:'], 0);
     var unraveler = new Unraveler(cursor);
-    unraveler.likeCut = true;
+    unraveler.shortArguments = true;
 
     assert.equals(unraveler.hasOption(), true, 'has an option');
     assert.equals(unraveler.hasArgument(), true, 'could be used as an argument');
