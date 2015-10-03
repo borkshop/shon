@@ -3,18 +3,21 @@
 var Cursor = require('./cursor');
 var Unraveler = require('./unraveler');
 
-function Parser() {
+function Parser(name) {
+    this.name = name;
     // Parsers:
     this.options = {};
     this.args = [];
     this.tail = null;
     this.pluses = false;
+    this.likeCut = false;
     // TODO interleaved vs non-interleaved
 }
 
 Parser.prototype.parse = function parse(cursor, delegate, context) {
     var unraveler = new Unraveler(cursor);
     unraveler.pluses = this.pluses;
+    unraveler.likeCut = this.likeCut;
 
     // Interleaved arguments and options until the required arguments run dry.
     var index = 0;
@@ -37,9 +40,7 @@ Parser.prototype.parse = function parse(cursor, delegate, context) {
     }
 
     while (unraveler.hasArgument()) {
-        if (!this.tail.parse(unraveler, delegate, context)) {
-            return delegate.end();
-        }
+        this.tail.parse(unraveler, delegate, context);
     }
 
     return delegate.end();
@@ -54,6 +55,10 @@ Parser.prototype.parseOption = function parseOption(unraveler, delegate, context
         delegate.error('Unexpected option: ' + option, unraveler.cursor);
         return false;
     }
+};
+
+Parser.prototype.expected = function expected(delegate) {
+    delegate.error('Expected: ' + this.name);
 };
 
 module.exports = Parser;

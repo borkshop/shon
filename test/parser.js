@@ -6,6 +6,7 @@ var Delegate = require('./delegate');
 var Cursor = require('../cursor');
 var Parser = require('../parser');
 var ValueParser = require('../value-parser');
+var ArrayParser = require('../array-parser');
 var BooleanParser = require('../boolean-parser');
 var CounterParser = require('../counter-parser');
 
@@ -150,7 +151,7 @@ test('--key=value style', function t(assert) {
     parser.options['-x'] = new BooleanParser('excalibur');
     var context = {};
     parser.parse(cursor, delegate, context);
-    assert.deepEquals(context, {key: 'value', excalibur: true}, 'flag');
+    assert.deepEquals(context, {key: 'value', excalibur: true}, 'parses --key=value style long option');
 });
 
 test('option-like values', function t(assert) {
@@ -161,7 +162,58 @@ test('option-like values', function t(assert) {
     parser.options['-x'] = new BooleanParser('excalibur');
     var context = {};
     parser.parse(cursor, delegate, context);
-    assert.deepEquals(context, {key: '--value', excalibur: true}, 'flag');
+    assert.deepEquals(context, {key: '--value', excalibur: true}, 'parses option value that looks like option');
+});
+
+test('push long options onto an array', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['--letter', 'a', '--letter', 'b', '--letter', 'c'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['--letter'] = new ArrayParser('letters');
+    var context = {letters: []};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses repeated long options');
+});
+
+test('push short cut-like options onto an array', function t(assert) {
+    var parser = new Parser();
+    parser.likeCut = true;
+    var cursor = new Cursor(['-la', '-lb', '-lc'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['-l'] = new ArrayParser('letters');
+    var context = {letters: []};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses like cut');
+});
+
+test('push short options onto an array', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['-l', 'a', '-l', 'b', '-l', 'c'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['-l'] = new ArrayParser('letters');
+    var context = {letters: []};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each -l');
+});
+
+test('push joined short options onto an array', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['-lll', 'a', 'b', 'c'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['-l'] = new ArrayParser('letters');
+    var context = {letters: []};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each flag after -lll');
+});
+
+test('tail parser for vargs', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['a', 'b', 'c'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.tail = new ArrayParser('vargs');
+    var context = {vargs: []};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {vargs: ['a', 'b', 'c']}, 'parses variable trailing args');
 });
 
 test('complains but deals with redundancy', function t(assert) {
