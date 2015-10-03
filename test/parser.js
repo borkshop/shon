@@ -142,6 +142,28 @@ test('no pluses', function t(assert) {
     assert.deepEquals(context, {number: -2}, 'finds number');
 });
 
+test('--key=value style', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['-x', '--key=value'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['--key'] = new ValueParser('key');
+    parser.options['-x'] = new BooleanParser('excalibur');
+    var context = {};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {key: 'value', excalibur: true}, 'flag');
+});
+
+test('option-like values', function t(assert) {
+    var parser = new Parser();
+    var cursor = new Cursor(['-x', '--key', '--value'], 0);
+    var delegate = new Delegate(assert, {});
+    parser.options['--key'] = new ValueParser('key');
+    parser.options['-x'] = new BooleanParser('excalibur');
+    var context = {};
+    parser.parse(cursor, delegate, context);
+    assert.deepEquals(context, {key: '--value', excalibur: true}, 'flag');
+});
+
 test('complains but deals with redundancy', function t(assert) {
     assert.end();
 });

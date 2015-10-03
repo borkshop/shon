@@ -5,14 +5,15 @@ function ValueParser(name) {
 }
 
 ValueParser.prototype.parse = function parse(unraveler, delegate, context) {
-    if (unraveler.cursor.end()) {
+    if (unraveler.hasArgument()) {
+        context[this.name] = unraveler.nextArgument();
+    } else {
         delegate.error('Expected value for: ' + this.name, unraveler.cursor);
         return;
     }
     // TODO redundancy detection
     // TODO coercion
     // TODO validation
-    context[this.name] = unraveler.cursor.shift();
 };
 
 ValueParser.prototype.expected = function expected(delegate) {

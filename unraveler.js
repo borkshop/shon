@@ -9,12 +9,16 @@
 
 function Unraveler(cursor) {
     this.cursor = cursor;
-    this.reserve = [];
+    this.reservedOptions = [];
+    this.reservedArgument = null;
     this.pluses = false;
     this.escaped = false;
 }
 
 Unraveler.prototype.hasArgument = function hasArgument() {
+    if (this.reservedArgument !== null) {
+        return true;
+    }
     if (this.cursor.end()) {
         return false;
     }
@@ -30,13 +34,18 @@ Unraveler.prototype.hasArgument = function hasArgument() {
 };
 
 Unraveler.prototype.nextArgument = function nextArgument() {
+    var arg = this.reservedArgument;
+    if (arg !== null) {
+        this.reservedArgument = null;
+        return arg;
+    }
     if (this.cursor.end()) {
         return null;
     }
     if (this.escaped) {
         return this.cursor.shift();
     }
-    var arg = this.cursor.shift();
+    arg = this.cursor.shift();
     if (arg === '--') {
         this.escaped = true;
         if (this.cursor.end()) {
@@ -48,7 +57,7 @@ Unraveler.prototype.nextArgument = function nextArgument() {
 };
 
 Unraveler.prototype.hasOption = function hasOption() {
-    if (this.reserve.length) {
+    if (this.reservedOptions.length) {
         return true;
     }
     if (this.escaped || this.cursor.end()) {
@@ -72,30 +81,38 @@ Unraveler.prototype.hasOption = function hasOption() {
 };
 
 Unraveler.prototype.nextOption = function nextOption() {
-    if (this.reserve.length) {
-        return this.reserve.shift();
+    if (this.reservedOptions.length) {
+        return this.reservedOptions.shift();
     }
     if (this.cursor.end()) {
         return null;
     }
     var arg = this.cursor.shift();
+    var index;
     if (arg.lastIndexOf('--', 0) === 0) {
-        return arg;
+        index = arg.indexOf('=', 2);
+        if (index >= 2) {
+            this.reservedArgument = arg.slice(index + 1);
+            return arg.slice(0, index);
+        } else {
+            return arg;
+        }
     } else if (
         arg.lastIndexOf('-', 0) === 0 ||
         (this.pluses && arg.lastIndexOf('+', 0) === 0)
     ) {
+        // TODO alternate interpretation for cut-like commands
         this.unravel(arg);
     }
-    if (this.reserve.length) {
-        return this.reserve.shift();
+    if (this.reservedOptions.length) {
+        return this.reservedOptions.shift();
     }
     return arg;
 };
 
 Unraveler.prototype.unravel = function unravel(arg) {
     for (var index = 1; index < arg.length; index++) {
-        this.reserve.push(arg[0] + arg[index]);
+        this.reservedOptions.push(arg[0] + arg[index]);
     }
 };
 
