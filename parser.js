@@ -9,17 +9,21 @@ function Parser(name) {
     this.options = {};
     this.args = [];
     this.tail = null;
-    this.pluses = false;
+    this.plusOptions = false;
     this.shortArguments = false;
-    // TODO interleaved vs non-interleaved
 }
 
-Parser.prototype.parse = function parse(cursor, delegate, context) {
-    var unraveler = new Unraveler(cursor);
-    unraveler.pluses = this.pluses;
+Parser.prototype.parse = function parse(unraveler, delegate, context) {
+    unraveler = new Unraveler(unraveler.cursor);
+    unraveler.plusOptions = this.plusOptions;
     unraveler.shortArguments = this.shortArguments;
 
-    // Interleaved arguments and options until the required arguments run dry.
+    while (unraveler.hasOption()) {
+        this.parseOption(unraveler, delegate, context);
+    }
+
+    // Interleaved arguments and options until the arguments in the schema run
+    // dry.
     var index = 0;
     for (; index < this.args.length; index++) {
         var arg = this.args[index];
@@ -35,15 +39,20 @@ Parser.prototype.parse = function parse(cursor, delegate, context) {
     }
 
     if (!this.tail && unraveler.hasArgument()) {
-        delegate.error('Expected no further arguments', cursor);
-        return delegate.end();
+        delegate.error('Unexpected argument: ' + unraveler.nextArgument(), unraveler.cursor);
+        return null;
     }
 
-    while (unraveler.hasArgument()) {
-        this.tail.parse(unraveler, delegate, context);
+    // Parse interleaved arguments and options until the source runs dry.
+    while (unraveler.hasArgument() || unraveler.hasOption()) {
+        if (unraveler.hasOption()) {
+            this.parseOption(unraveler, delegate, context);
+        } else if (unraveler.hasArgument()) {
+            this.tail.parse(unraveler, delegate, context);
+        }
     }
 
-    return delegate.end();
+    return null;
 };
 
 Parser.prototype.parseOption = function parseOption(unraveler, delegate, context) {

@@ -14,7 +14,7 @@ function Unraveler(cursor) {
     this.cursor = cursor;
     this.reservedOptions = [];
     this.reservedArgument = null;
-    this.pluses = false;
+    this.plusOptions = false;
     this.shortArguments = false;
     this.escaped = false;
 }
@@ -76,7 +76,7 @@ Unraveler.prototype.hasOption = function hasOption() {
         return false; // - is a valid argument
     } else if (
         arg.lastIndexOf('-', 0) === 0 ||
-        (this.pluses && arg.lastIndexOf('+', 0) === 0)
+        (this.plusOptions && arg.lastIndexOf('+', 0) === 0)
     ) {
         return true; // short option
     } else {
@@ -103,7 +103,7 @@ Unraveler.prototype.nextOption = function nextOption() {
         }
     } else if (
         arg.lastIndexOf('-', 0) === 0 ||
-        (this.pluses && arg.lastIndexOf('+', 0) === 0)
+        (this.plusOptions && arg.lastIndexOf('+', 0) === 0)
     ) {
         if (this.shortArguments && arg.length > 2) {
             this.reservedArgument = arg.slice(2);
