@@ -1,5 +1,13 @@
 {
+  "scripts": {
+    "test": "node test",
+    "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",
+    "view-cover": "opn coverage/index.html"
+  },
   "devDependencies": {
+    "faucet": "0.0.1",
+    "istanbul": "^0.3.21",
+    "opn-cli": "^1.0.0",
     "tape": "^4.2.0"
   }
 }
