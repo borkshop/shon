@@ -1,7 +1,7 @@
 'use strict';
 
 // require('./cursor'); // should be fully covered
-require('./unraveler');
+require('./iterator');
 require('./parser');
 
 require('./empty');

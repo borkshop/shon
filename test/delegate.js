@@ -2,7 +2,7 @@
 
 var Parser = require('../parser');
 var Cursor = require('../cursor');
-var Unraveler = require('../unraveler');
+var Iterator = require('../iterator');
 
 function Delegate(assert, expected) {
     this.assert = assert;
@@ -14,9 +14,9 @@ Delegate.case = function (args, expected) {
     return function t(assert) {
         var parser = new Parser();
         var cursor = new Cursor(args, 0);
-        var unraveler = new Unraveler(cursor);
+        var iterator = new Iterator(cursor);
         var delegate = new Delegate(assert, expected);
-        parser.parse(unraveler, delegate);
+        parser.parse(iterator, delegate);
         delegate.end();
     }
 };

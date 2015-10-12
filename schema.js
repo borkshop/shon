@@ -1,7 +1,7 @@
 'use strict';
 
 var Cursor = require('./cursor');
-var Unraveler = require('./unraveler');
+var Iterator = require('./iterator');
 var Delegate = require('./delegate');
 var Parser = require('./parser');
 var ValueParser = require('./value-parser');
@@ -25,7 +25,7 @@ function Schema() {
 Schema.prototype.parse = function parse(args, index, delegate) {
     var cursor = new Cursor(args, index);
     var parser = new Parser();
-    var unraveler = new Unraveler(cursor);
+    var iterator = new Iterator(cursor);
     delegate = delegate || new Delegate();
 
     parser.plusOptions = this._plusOptions;
@@ -41,7 +41,7 @@ Schema.prototype.parse = function parse(args, index, delegate) {
         this._options[index]._setup(parser, context);
     }
 
-    parser.parse(unraveler, delegate, context);
+    parser.parse(iterator, delegate, context);
     return context;
 };
 

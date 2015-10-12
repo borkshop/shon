@@ -2,15 +2,15 @@
 
 // Short options of the form `-fx file` (which is equivalent to `-f file -x`)
 // pose a problem for a parser that pulls values off a cursor.
-// The unraveler ensures that defered short options are tracked in a reserve.
-// The Unraveler manages a cursor within a particular context, exposing
+// The iterator ensures that defered short options are tracked in a reserve.
+// The Iterator manages a cursor within a particular context, exposing
 // a higher level cursor interface, which can distinguish options from other
 // arguments.
 
 // In the context of consuming an argument, arguments may look like options,
 // e.g., --key=--value and --key --value.
 
-function Unraveler(cursor) {
+function Iterator(cursor) {
     this.cursor = cursor;
     this.reservedOptions = [];
     this.reservedArgument = null;
@@ -19,7 +19,7 @@ function Unraveler(cursor) {
     this.escaped = false;
 }
 
-Unraveler.prototype.hasArgument = function hasArgument() {
+Iterator.prototype.hasArgument = function hasArgument() {
     if (this.reservedArgument !== null) {
         return true;
     }
@@ -37,7 +37,7 @@ Unraveler.prototype.hasArgument = function hasArgument() {
     return !this.cursor.end();
 };
 
-Unraveler.prototype.nextArgument = function nextArgument() {
+Iterator.prototype.nextArgument = function nextArgument() {
     var arg = this.reservedArgument;
     if (arg !== null) {
         this.reservedArgument = null;
@@ -60,7 +60,7 @@ Unraveler.prototype.nextArgument = function nextArgument() {
     return arg;
 };
 
-Unraveler.prototype.hasOption = function hasOption() {
+Iterator.prototype.hasOption = function hasOption() {
     if (this.reservedOptions.length) {
         return true;
     }
@@ -84,7 +84,7 @@ Unraveler.prototype.hasOption = function hasOption() {
     }
 };
 
-Unraveler.prototype.nextOption = function nextOption() {
+Iterator.prototype.nextOption = function nextOption() {
     if (this.reservedOptions.length) {
         return this.reservedOptions.shift();
     }
@@ -118,10 +118,10 @@ Unraveler.prototype.nextOption = function nextOption() {
     return arg;
 };
 
-Unraveler.prototype.unravel = function unravel(arg) {
+Iterator.prototype.unravel = function unravel(arg) {
     for (var index = 1; index < arg.length; index++) {
         this.reservedOptions.push(arg[0] + arg[index]);
     }
 };
 
-module.exports = Unraveler;
+module.exports = Iterator;

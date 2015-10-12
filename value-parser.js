@@ -4,11 +4,11 @@ function ValueParser(name) {
     this.name = name;
 }
 
-ValueParser.prototype.parse = function parse(unraveler, delegate, context) {
-    if (unraveler.hasArgument()) {
-        context[this.name] = unraveler.nextArgument();
+ValueParser.prototype.parse = function parse(iterator, delegate, context) {
+    if (iterator.hasArgument()) {
+        context[this.name] = iterator.nextArgument();
     } else {
-        delegate.error('Expected value for: ' + this.name, unraveler.cursor);
+        delegate.error('Expected value for: ' + this.name, iterator.cursor);
         return;
     }
     // TODO redundancy detection

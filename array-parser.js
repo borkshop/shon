@@ -4,11 +4,11 @@ function ArrayParser(name) {
     this.name = name;
 }
 
-ArrayParser.prototype.parse = function parse(unraveler, delegate, context) {
+ArrayParser.prototype.parse = function parse(iterator, delegate, context) {
     // TODO redundancy detection
     // TODO coercion
     // TODO validation
-    context[this.name].push(unraveler.nextArgument());
+    context[this.name].push(iterator.nextArgument());
 };
 
 ArrayParser.prototype.expected = function expected(delegate) {
