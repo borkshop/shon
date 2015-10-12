@@ -23,8 +23,17 @@ Delegate.case = function (args, expected) {
 
 Delegate.prototype.error = function error(message) {
     var key = 'error' + this.index++;
-    this.assert.equals(message, this.expected[key], 'Unexpected ' + key + ': ' + message);
+    this.assert.equals(message, this.expected[key], 'Logs ' + key + ': ' + message);
     delete this.expected[key];
+};
+
+Delegate.prototype.warn = function warn(message) {
+    var key = 'warn' + this.index++;
+    this.assert.equals(message, this.expected[key], 'Logs ' + key + ': ' + message);
+    delete this.expected[key];
+};
+
+Delegate.prototype.cursor = function cursor() {
 };
 
 Delegate.prototype.end = function end() {

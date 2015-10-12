@@ -6,7 +6,6 @@ function Delegate() {
 
 Delegate.prototype.log = function log(message, cursor) {
     console.log(message);
-    // TODO show cursor
 };
 
 Delegate.prototype.error = function error(message, cursor) {
@@ -14,8 +13,14 @@ Delegate.prototype.error = function error(message, cursor) {
     if (cursor) {
         this.cursor(cursor);
     }
-    // TODO show cursor
     this.exitCode = 1;
+};
+
+Delegate.prototype.warn = function warn(message, cursor) {
+    console.warn(message);
+    if (cursor) {
+        this.cursor(cursor);
+    }
 };
 
 Delegate.prototype.cursor = function markCursor(cursor) {
@@ -31,7 +36,7 @@ Delegate.prototype.cursor = function markCursor(cursor) {
         }
     }
     if (index === cursor.index) {
-        length = line.length + 1;
+        length = line.length;
     }
     console.log(line);
     line = '    ';

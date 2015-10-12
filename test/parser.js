@@ -6,10 +6,67 @@ var Delegate = require('./delegate');
 var Cursor = require('../cursor');
 var Iterator = require('../iterator');
 var Parser = require('../parser');
-var ValueParser = require('../value-parser');
-var ArrayParser = require('../array-parser');
-var BooleanParser = require('../boolean-parser');
-var CounterParser = require('../counter-parser');
+
+function ValueParser(name) {
+    this.name = name;
+}
+
+ValueParser.prototype.parse = function parse(iterator, delegate, context) {
+    if (iterator.hasArgument()) {
+        context[this.name] = iterator.nextArgument();
+    } else {
+        delegate.error('Expected value for: ' + this.name, iterator.cursor);
+        return;
+    }
+    // TODO redundancy detection
+    // TODO coercion
+    // TODO validation
+};
+
+ValueParser.prototype.expected = function expected(delegate) {
+    delegate.error('Expected: ' + this.name);
+};
+
+function ArrayParser(name) {
+    this.name = name;
+}
+
+ArrayParser.prototype.parse = function parse(iterator, delegate, context) {
+    // TODO redundancy detection
+    // TODO coercion
+    // TODO validation
+    context[this.name].push(iterator.nextArgument());
+};
+
+ArrayParser.prototype.expected = function expected(delegate) {
+    delegate.error('Expected: ' + this.name);
+};
+
+function BooleanParser(name, def) {
+    this.name = name;
+    this.default = def || false;
+}
+
+BooleanParser.prototype = Object.create(ValueParser.prototype);
+BooleanParser.prototype.constructor = BooleanParser;
+
+BooleanParser.prototype.parse = function parse(cursor, delegate, context) {
+    context[this.name] = !this.default;
+};
+
+function CounterParser(name, delta) {
+    this.name = name;
+    this.delta = delta || 1;
+}
+
+CounterParser.prototype = Object.create(ValueParser.prototype);
+CounterParser.prototype.constructor = CounterParser;
+
+CounterParser.prototype.parse = function parse(cursor, delegate, context) {
+    context[this.name] += this.delta;
+};
+
+module.exports = CounterParser;
 
 test('one unrecognized flag', Delegate.case(['-a'], {
     error0: 'Unexpected option: -a'

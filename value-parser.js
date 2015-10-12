@@ -1,23 +1,23 @@
 'use strict';
 
-function ValueParser(name) {
+function ValueParser(name, converter, validator, collector) {
     this.name = name;
+    this.converter = converter;
+    this.validator = validator;
+    this.collector = collector;
 }
 
-ValueParser.prototype.parse = function parse(iterator, delegate, context) {
+ValueParser.prototype.parse = function parse(iterator, delegate) {
     if (iterator.hasArgument()) {
-        context[this.name] = iterator.nextArgument();
+        var argument = iterator.nextArgument();
+        var value = this.converter.convert(argument, delegate);
+        if (this.validator.validate(value, delegate)) {
+            this.collector.collect(value, delegate);
+        }
     } else {
-        delegate.error('Expected value for: ' + this.name, iterator.cursor);
-        return;
+        delegate.error('Expected: ' + this.name);
+        delegate.cursor(iterator.cursor);
     }
-    // TODO redundancy detection
-    // TODO coercion
-    // TODO validation
-};
-
-ValueParser.prototype.expected = function expected(delegate) {
-    delegate.error('Expected: ' + this.name);
 };
 
 module.exports = ValueParser;

@@ -9,5 +9,8 @@
     "istanbul": "^0.3.21",
     "opn-cli": "^1.0.0",
     "tape": "^4.2.0"
+  },
+  "dependencies": {
+    "camelcase": "^1.2.1"
   }
 }
