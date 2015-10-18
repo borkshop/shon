@@ -5,7 +5,7 @@ function Converter() {
 }
 
 Converter.lift = function lift(convert) {
-    if (convert.convert) {
+    if (convert && convert.convert) {
         return convert;
     }
     var converter = new Converter();

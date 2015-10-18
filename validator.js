@@ -5,7 +5,7 @@ function Validator() {
 }
 
 Validator.lift = function lift(validate) {
-    if (validate.validate) {
+    if (validate && validate.validate) {
         return validate;
     }
     var validator = new Validator();

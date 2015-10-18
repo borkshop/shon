@@ -66,8 +66,4 @@ Parser.prototype.parseOption = function parseOption(iterator, delegate, context)
     }
 };
 
-Parser.prototype.expected = function expected(delegate) {
-    delegate.error('Expected: ' + this.name);
-};
-
 module.exports = Parser;

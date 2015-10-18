@@ -1,24 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var Command = require('../command');
-var Delegate = require('./delegate');
-
-function commandCases(setup, cases) {
-    return function t(assert) {
-        var command = new Command('dwim');
-        setup(command);
-
-        for (var index = 0; index < cases.length; index++) {
-            var c = cases[index];
-            var delegate = new Delegate(assert, c.logs || {});
-            var options = command.parse(c.args, 0, delegate);
-            assert.deepEquals(options, c.options, c.name);
-        }
-
-        assert.end();
-    };
-}
+var commandCases = require('./cases');
 
 test('command with -b --bool boolean flag', commandCases(function c(command) {
     command.option('-b', '--bool');
@@ -222,24 +205,175 @@ test('command that accepts multiple values on short options', commandCases(funct
 
 ]));
 
-// TODO values collector with minimum and maximum length
+test('command with minimum and maximum of an option', commandCases(function c(command) {
+    command.option('-k', 'value').name('key').push(1, 2);
+}, [
+
+    {
+        name: 'too few',
+        args: [],
+        options: {
+            key: []
+        },
+        logs: {
+            error0: 'Too few: value'
+        }
+    },
+
+    {
+        name: 'enough',
+        args: ['-k', 'value'],
+        options: {
+            key: ['value']
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'more than enough',
+        args: ['-k', 'value', '-k', 'value'],
+        options: {
+            key: ['value', 'value']
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'too many',
+        args: ['-kkk', '1', '2', '3'],
+        options: {
+            key: ['1', '2', '3']
+        },
+        logs: {
+            error0: 'Too many: value'
+        }
+    },
+
+]));
+
+test('command with converter', commandCases(function c(command) {
+    command.option('-i', 'integer')
+        .convert(Number);
+}, [
+
+    {
+        name: 'converts an integer',
+        args: ['-i', '100'],
+        options: {
+            integer: 100
+        }
+    }
+
+]));
+
 // TODO value or push values with a converter for int
 // TODO value or push values with validator for value ranges
 // TODO value or push values with converter provided as function
 // TODO value or push values with validator provided as function
 
-test('command with -h and --help commands', commandCases(function c(command) {
-    command.command('-h', '--help');
+test('command with options subcommand and options', commandCases(function c(dwim) {
+    dwim.option('-f');
+    var rm = dwim.command('rm')
+    rm.option('-f');
+    var add = dwim.command('add');
 }, [
 
     {
-        name: 'degenerate case',
-        args: [],
-        options: {},
-        logs: {}
+        name: 'neither before nor after',
+        args: ['rm'],
+        options: {
+            f: false,
+            command: {
+                name: 'rm',
+                options: {
+                    f: false
+                }
+            }
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'before',
+        args: ['-f', 'rm'],
+        options: {
+            f: true,
+            command: {
+                name: 'rm',
+                options: {
+                    f: false
+                }
+            }
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'after',
+        args: ['rm', '-f'],
+        options: {
+            f: false,
+            command: {
+                name: 'rm',
+                options: {
+                    f: true
+                }
+            }
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'before and after',
+        args: ['-f', 'rm', '-f'],
+        options: {
+            f: true,
+            command: {
+                name: 'rm',
+                options: {
+                    f: true
+                }
+            }
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'independent option profile per command',
+        args: ['add'],
+        options: {
+            f: false,
+            command: {
+                name: 'add',
+                options: {
+                }
+            }
+        },
+        logs: {
+        }
+    },
+
+    {
+        name: 'unexpected suboption',
+        args: ['add', '-f'],
+        options: {
+            f: false,
+            command: {
+                name: 'add',
+                options: {
+                }
+            }
+        },
+        logs: {
+            error0: 'Unexpected option: -f'
+        }
     },
 
 ]));
-
-// TODO command with subcommand options
 

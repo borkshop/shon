@@ -1,26 +1,25 @@
 'use strict';
 
-function ArrayCollector(name, min, max) {
+function ArrayCollector(name, valueName, min, max) {
     this.name = name;
+    this.valueName = valueName;
     this.value = [];
-    this.min = min || 0;
-    this.max = max || Infinity;
+    this.min = min;
+    this.max = max;
 }
 
 ArrayCollector.prototype.collect = function collect(value, delegate, cursor) {
     if (this.value.length >= this.max) {
-        delegate.error('Too many: ' + this.name);
+        delegate.error('Too many: ' + this.valueName);
         delegate.cursor(cursor);
-        return;
     }
     this.value.push(value);
 }
 
 ArrayCollector.prototype.capture = function capture(delegate, cursor) {
     if (this.value.length < this.min) {
-        delegate.error('Too few: ' + this.name);
+        delegate.error('Too few: ' + this.valueName);
         delegate.cursor(cursor);
-        return;
     }
     return this.value;
 };

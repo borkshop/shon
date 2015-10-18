@@ -18,6 +18,7 @@ Delegate.case = function (args, expected) {
         var delegate = new Delegate(assert, expected);
         parser.parse(iterator, delegate);
         delegate.end();
+        assert.end();
     }
 };
 
@@ -33,14 +34,19 @@ Delegate.prototype.warn = function warn(message) {
     delete this.expected[key];
 };
 
+Delegate.prototype.log = function log(message) {
+    var key = 'log' + this.index++;
+    this.assert.equals(message, this.expected[key], 'Logs ' + key + ': ' + message);
+    delete this.expected[key];
+};
+
 Delegate.prototype.cursor = function cursor() {
 };
 
 Delegate.prototype.end = function end() {
     for (var name in this.expected) {
-        this.assert.fail('expected ' + name + ': ' + this.expected[name]);
+        this.assert.fail('Expected ' + name + ': ' + this.expected[name]);
     }
-    this.assert.end();
 };
 
 module.exports = Delegate;

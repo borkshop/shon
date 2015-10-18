@@ -1,0 +1,15 @@
+instrumentation:
+    include-all-sources: true
+    excludes:
+        - delegate.js
+check:
+    global:
+        statements: 100
+        lines: 100
+        branches: 100
+        functions: 100
+    each:
+        statements: 0
+        lines: 0
+        branches: 0
+        functions: 0

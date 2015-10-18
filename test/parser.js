@@ -111,6 +111,7 @@ test('grabs a non-optional argument', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {'foo': 'bar'}, 'produces context');
     delegate.end();
+    assert.end();
 });
 
 test('complains of a missing argument', function t(assert) {
@@ -125,6 +126,7 @@ test('complains of a missing argument', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {foo: 'baz'}, 'context contains default');
     delegate.end();
+    assert.end();
 });
 
 test('takes a default for a missing option', function t(assert) {
@@ -137,6 +139,7 @@ test('takes a default for a missing option', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {'foo': 'baz'}, 'context contains default');
     delegate.end();
+    assert.end();
 });
 
 test('accepts an option', function t(assert) {
@@ -149,6 +152,7 @@ test('accepts an option', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {'foo': 'bar'}, 'context contains default');
     delegate.end();
+    assert.end();
 });
 
 test('accepts a sequence of boolean flags', function t(assert) {
@@ -163,6 +167,7 @@ test('accepts a sequence of boolean flags', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {alpha: true, beta: true, gamma: true}, 'context contains flags');
     delegate.end();
+    assert.end();
 });
 
 test('counts flags', function t(assert) {
@@ -175,6 +180,7 @@ test('counts flags', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {verbose: 3}, 'elevates verbosity');
     delegate.end();
+    assert.end();
 });
 
 test('up and down counter', function t(assert) {
@@ -188,6 +194,7 @@ test('up and down counter', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {verbose: 2}, 'zeros in on verbosity');
     delegate.end();
+    assert.end();
 });
 
 test('plus or minus', function t(assert) {
@@ -202,6 +209,7 @@ test('plus or minus', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {number: 1}, 'finds number');
     delegate.end();
+    assert.end();
 });
 
 test('no pluses', function t(assert) {
@@ -217,6 +225,7 @@ test('no pluses', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {number: -2}, 'finds number');
     delegate.end();
+    assert.end();
 });
 
 test('--key=value style', function t(assert) {
@@ -230,6 +239,7 @@ test('--key=value style', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {key: 'value', excalibur: true}, 'parses --key=value style long option');
     delegate.end();
+    assert.end();
 });
 
 test('option-like values', function t(assert) {
@@ -243,6 +253,7 @@ test('option-like values', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {key: '--value', excalibur: true}, 'parses option value that looks like option');
     delegate.end();
+    assert.end();
 });
 
 test('push long options onto an array', function t(assert) {
@@ -255,6 +266,7 @@ test('push long options onto an array', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses repeated long options');
     delegate.end();
+    assert.end();
 });
 
 test('push short cut-like options onto an array', function t(assert) {
@@ -268,6 +280,7 @@ test('push short cut-like options onto an array', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses like cut');
     delegate.end();
+    assert.end();
 });
 
 test('push short options onto an array', function t(assert) {
@@ -280,6 +293,7 @@ test('push short options onto an array', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each -l');
     delegate.end();
+    assert.end();
 });
 
 test('push joined short options onto an array', function t(assert) {
@@ -292,6 +306,7 @@ test('push joined short options onto an array', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each flag after -lll');
     delegate.end();
+    assert.end();
 });
 
 test('tail parser for vargs', function t(assert) {
@@ -304,6 +319,7 @@ test('tail parser for vargs', function t(assert) {
     parser.parse(iterator, delegate, context);
     assert.deepEquals(context, {vargs: ['a', 'b', 'c']}, 'parses variable trailing args');
     delegate.end();
+    assert.end();
 });
 
 // TODO test('complains but deals with redundancy', function t(assert) {
