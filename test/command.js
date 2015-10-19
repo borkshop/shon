@@ -66,18 +66,38 @@ test('command with required -b --bool boolean flag', commandCases(function c(com
     {
         name: 'missing',
         args: [],
-        options: {
-            bool: false
-        },
+        options: null,
         logs: {
-            error0: 'Expected: bool'
+            error0: 'Required: bool'
         }
     },
 
 ]));
 
+test('option with --no-flag', commandCases(function c(command) {
+    command.option('--no-strict');
+}, [
+
+    {
+        name: 'missing',
+        args: [],
+        options: {
+            strict: true
+        }
+    },
+
+    {
+        name: 'provided',
+        args: ['--no-strict'],
+        options: {
+            strict: false
+        }
+    }
+
+]));
+
 test('command with single value option', commandCases(function c(command) {
-    command.option('-k', '--key', 'value');
+    command.option('-k', '--key', '<value>');
 }, [
 
     {
@@ -126,9 +146,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'redundant with short but missing parse value',
         args: ['-kk', 'value'],
-        options: {
-            key: 'value'
-        },
+        options: null,
         logs: {
             error0: 'Expected: value'
         }
@@ -137,7 +155,7 @@ test('command with single value option', commandCases(function c(command) {
 ]));
 
 test('command that accepts arguments on short options', commandCases(function c(command) {
-    command.shortArguments().option('-k', 'value').name('key');
+    command.option('key', '-k<value>');
 }, [
 
     {
@@ -151,7 +169,7 @@ test('command that accepts arguments on short options', commandCases(function c(
 ]));
 
 test('command with multiple value option', commandCases(function c(command) {
-    command.option('-k', '--key', 'value').push();
+    command.option('-k', '--key', '<value>').push();
 }, [
 
     {
@@ -181,9 +199,7 @@ test('command with multiple value option', commandCases(function c(command) {
     {
         name: 'one and half provided with conjoined shorts',
         args: ['-kk', '1'],
-        options: {
-            key: ['1']
-        },
+        options: null,
         logs: {
             error0: 'Expected: value'
         }
@@ -192,7 +208,7 @@ test('command with multiple value option', commandCases(function c(command) {
 ]));
 
 test('command that accepts multiple values on short options', commandCases(function c(command) {
-    command.shortArguments().option('-k', 'value').name('key').push();
+    command.option('-k<value>').name('key').push();
 }, [
 
     {
@@ -206,15 +222,13 @@ test('command that accepts multiple values on short options', commandCases(funct
 ]));
 
 test('command with minimum and maximum of an option', commandCases(function c(command) {
-    command.option('-k', 'value').name('key').push(1, 2);
+    command.option('-k', 'key', '<value>').push(1, 2);
 }, [
 
     {
         name: 'too few',
         args: [],
-        options: {
-            key: []
-        },
+        options: null,
         logs: {
             error0: 'Too few: value'
         }
@@ -243,9 +257,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
     {
         name: 'too many',
         args: ['-kkk', '1', '2', '3'],
-        options: {
-            key: ['1', '2', '3']
-        },
+        options: null,
         logs: {
             error0: 'Too many: value'
         }
@@ -254,7 +266,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
 ]));
 
 test('command with converter', commandCases(function c(command) {
-    command.option('-i', 'integer')
+    command.option('-i', '<integer>')
         .convert(Number);
 }, [
 
@@ -268,10 +280,120 @@ test('command with converter', commandCases(function c(command) {
 
 ]));
 
-// TODO value or push values with a converter for int
-// TODO value or push values with validator for value ranges
-// TODO value or push values with converter provided as function
-// TODO value or push values with validator provided as function
+test('command accepts required argument', commandCases(function c(dwim) {
+    dwim.argument('<name>');
+}, [
+
+    {
+        name: 'provided',
+        args: ['value'],
+        options: {
+            name: 'value'
+        }
+    },
+
+    {
+        name: 'missing',
+        args: [],
+        options: null,
+        logs: {
+            error0: 'Expected: name'
+        }
+    },
+
+    {
+        name: 'extra',
+        args: ['good', 'bad'],
+        options: null,
+        logs: {
+            error0: 'Unexpected argument: bad'
+        }
+    }
+
+
+]));
+
+test('command accepts multiple arguments', commandCases(function c(dwim) {
+    dwim.argument('<start>').int();
+    dwim.argument('<stop>').int();
+    dwim.argument('<step>').int();
+}, [
+
+    {
+        name: 'all missing',
+        args: [],
+        options: null,
+        logs: {
+            error0: 'Expected: start',
+            error1: 'Expected: stop',
+            error2: 'Expected: step'
+        }
+    },
+
+    {
+        name: 'one missing',
+        args: ['0', '10'],
+        options: null,
+        logs: {
+            error0: 'Expected: step'
+        }
+    },
+
+    {
+        name: 'all accounted for',
+        args: ['0', '10', '1'],
+        options: {
+            start: 0,
+            stop: 10,
+            step: 1
+        }
+    }
+
+]));
+
+test('command accepts variadic arguments', commandCases(function c(dwim) {
+    dwim.argument('numbers', '<number>')
+        .convert(Number)
+        .validate(function isNumber(arg) {
+            return +arg === arg;
+        })
+        .push();
+}, [
+
+    {
+        name: 'no numbers',
+        args: [],
+        options: {
+            numbers: []
+        }
+    },
+
+    {
+        name: 'a number',
+        args: ['1'],
+        options: {
+            numbers: [1]
+        }
+    },
+
+    {
+        name: 'some numbers',
+        args: ['1', '2', '3'],
+        options: {
+            numbers: [1, 2, 3]
+        }
+    },
+
+    {
+        name: 'invalid number',
+        args: ['nope'],
+        options: null,
+        logs: {
+            error0: 'Expected: number'
+        }
+    }
+
+]));
 
 test('command with options subcommand and options', commandCases(function c(dwim) {
     dwim.option('-f');
@@ -362,14 +484,7 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'unexpected suboption',
         args: ['add', '-f'],
-        options: {
-            f: false,
-            command: {
-                name: 'add',
-                options: {
-                }
-            }
-        },
+        options: null,
         logs: {
             error0: 'Unexpected option: -f'
         }

@@ -8,7 +8,7 @@ var camelcase = require('camelcase');
 
 var ValueCollector = require('./value-collector');
 var ArrayCollector = require('./array-collector');
-var DifferenceCollector = require('./difference-collector'); // TODO
+// TODO var DifferenceCollector = require('./difference-collector');
 // TODO SetCollector
 
 var Converter = require('./converter');
@@ -27,13 +27,11 @@ function Command() {
     this._arguments = [];
     this._commands = [];
     this._help = [];
-    this._shortArguments = false;
-    this._plusOptions = false;
+    this._shortArgument = false;
 
     this._long = [];
-    this._no = [];
     this._short = [];
-    this._plus = [];
+    this._no = [];
     this._required = false;
     this._minLength = 0;
     this._maxLength = Infinity;
@@ -45,30 +43,40 @@ function Command() {
 
     for (var index = 0; index < arguments.length; index++) {
         var arg = arguments[index];
-        if (/ /.test(arg)) {
-            this._help.push(arg);
-        } else if (/^--no-/.test(arg)) {
+        if (arg.lastIndexOf('--no-', 0) === 0) {
             this._no.push(arg);
-        } else if (/^--/.test(arg)) {
+            this._default = true;
+        } else if (arg.lastIndexOf('--', 0) === 0) {
             this._long.push(arg);
-        } else if (/^-.$/.test(arg)) {
+        } else if (
+            arg.length > 4 &&
+            arg[0] === '-' ||
+            arg[2] === '<' &&
+            arg[arg.length - 1] === '>'
+        ) {
+            // -k<value>
+            this._short.push(arg.slice(0, 2));
+            this._argumentName = arg.slice(3, arg.length - 1);
+            this._shortArgument = true;
+        } else if (arg.length === 2 && arg[0] === '-') {
             this._short.push(arg);
-        } else if (/^\+.$/.test(arg)) {
-            this._plus.push(arg);
-            this._plusOptions = true;
-        } else if (/^-/.test(arg)) {
-            throw new Error('Option names with one dash may only have one letter.');
-        } else if (/^\+/.test(arg)) {
-            throw new Error('Option names with one plus may only have one letter.');
+        } else if (
+            arg.lastIndexOf('<', 0) === 0 &&
+            arg.indexOf('>', arg.length - 1) > 0
+        ) {
+            this._argumentName = arg.slice(1, arg.length - 1);
+        } else if (/[a-z]+/.test(arg)) {
+            this._name = arg;
         } else {
-            this._argumentName = arg;
-            console.log(this._argumentName, this._name, this._displayName);
+            throw new Error('Unrecognized argument to Command: ' + arg);
         }
     }
 
     if (this._name === null) {
         if (this._long.length) {
             this._name = camelcase(this._long[0]);
+        } else if (this._no.length) {
+            this._name = camelcase(this._no[0].slice(5));
         } else if (this._argumentName !== null) {
             this._name = camelcase(this._argumentName);
         } else if (this._short.length) {
@@ -86,10 +94,12 @@ Command.prototype.parse = function parse(args, index, delegate) {
 
 Command.prototype._parse = function parse(iterator, delegate) {
     var parser = new Parser();
-    parser.shortArguments = this._shortArguments;
     var collectors = [];
     this._setup(parser, collectors);
     parser.parse(iterator, delegate);
+    if (delegate.exitCode) {
+        return null;
+    }
     return this._collect(collectors, delegate, iterator.cursor);
 };
 
@@ -119,11 +129,6 @@ Command.prototype.command = function command() {
     return term;
 };
 
-Command.prototype.shortArguments = function shortArguments() {
-    this._shortArguments = true;
-    return this;
-};
-
 Command.prototype.name = function name(name) {
     this._name = name;
     return this;
@@ -135,13 +140,17 @@ Command.prototype.help = function help(line) {
 };
 
 Command.prototype.int = function int() {
-    this._converterType = 'number';
-    this._validatorType = 'int';
+    this._converter = Number;
+    this._validator = isInteger;
     return this;
 };
 
+function isInteger(n) {
+    return n >= 0;
+}
+
 Command.prototype.number = function int() {
-    this._converterType = 'number';
+    this._converter = Number;
     return this;
 };
 
@@ -192,17 +201,13 @@ Command.prototype._setup = function setup(parser, collectors) {
     var commandCollector = new ValueCollector('command', null, true);
     var commands = {};
     if (this._commands.length) {
-        this._setupCommands(parser, collectors, commands, commandCollector);
+        var commandParser = new CommandParser(commands, commandCollector);
+        parser.args.push(commandParser);
         collectors.push(commandCollector);
     }
     for (var index = 0; index < this._terms.length; index++) {
         this._terms[index]._setupParser(parser, collectors, commands, commandCollector);
     }
-};
-
-Command.prototype._setupCommands = function setupCommands(parser, collectors, commands, commandCollector) {
-    var commandParser = new CommandParser(commands, commandCollector);
-    parser.args.push(commandParser);
 };
 
 Command.prototype._collect = function collect(collectors, delegate, cursor) {
@@ -211,47 +216,23 @@ Command.prototype._collect = function collect(collectors, delegate, cursor) {
         var collector = collectors[index];
         context[collector.name] = collector.capture(delegate, cursor);
     }
+    if (delegate.exitCode) {
+        return null;
+    }
     return context;
 };
 
 Command.prototype._setupParser = function setup(parser, collectors, commands, commandCollector) {
 
-    if (this._command) {
-        return this._setupCommand(parser, commands, commandCollector);
-    }
-
-    if (this._no.length && this._argumentName === null) {
-        // TODO opposite boolean flag
-        this._default = true;
-        throw new Error('not implemented');
-    }
-
-    if (this._plus.length) {
-        // TODO +/- difference converter
-        throw new Error('not implemented');
-    }
-
-    if (this._long.length || this._short.length) {
-        this._setupFlags(parser, collectors);
+    if (this._command && this._name) {
+        commands[this._name] = this;
         return;
+        // TODO option-style commands, e.g., -h, --help
+        // TODO command is optional
+        // TODO no command given fallback
     }
 
-    if (this._name === null) {
-        throw new Error('Term missing name'); // TODO
-    }
-
-};
-
-Command.prototype._setupCommand = function setupCommand(parser, commands, commandCollector) {
-    if (this._argumentName !== null) {
-        commands[this._argumentName] = this;
-    }
-    // TODO option-style commands, e.g., -h, --help
-    // TODO command is optional
-    // TODO no command given fallback
-};
-
-Command.prototype._setupFlags = function setupFlags(parser, collectors) {
+    // flags are false by default
     if (this._argumentName === null && this._default === null) {
         this._default = false;
     }
@@ -266,9 +247,11 @@ Command.prototype._setupFlags = function setupFlags(parser, collectors) {
     var converter = Converter.lift(this._converter);
     var validator = Validator.lift(this._validator);
 
+    parser.shortArguments = parser.shortArguments || this._shortArgument;
+
     var termParser;
     if (this._argumentName === null) {
-        termParser = new FlagParser(!this._default, collector);
+        termParser = new FlagParser(true, collector);
     } else {
         termParser = new ValueParser(this._argumentName, converter, validator, collector);
     }
@@ -276,8 +259,29 @@ Command.prototype._setupFlags = function setupFlags(parser, collectors) {
     for (var index = 0; index < this._short.length; index++) {
         parser.options[this._short[index]] = termParser;
     }
+
     for (var index = 0; index < this._long.length; index++) {
         parser.options[this._long[index]] = termParser;
+    }
+
+    if (this._no.length) {
+        termParser = new FlagParser(false, collector);
+        for (var index = 0; index < this._no.length; index++) {
+            parser.options[this._no[index]] = termParser;
+        }
+    }
+
+    if (this._short.length === 0 && this._long.length === 0 && this._no.length === 0) {
+        if (this._collectorType === null) {
+            if (parser.tail !== null) {
+                throw new Error('This command cannot be'); // TODO
+            }
+            parser.args.push(termParser);
+        } else if (parser.tail === null) {
+            parser.tail = termParser;
+        } else {
+            throw new Error('This command cannot be'); // TODO
+        }
     }
 
     collectors.push(collector);
@@ -298,6 +302,10 @@ CommandParser.prototype.parse = function parse(iterator, delegate) {
         }
 
         var options = this.commands[command]._parse(iterator, delegate);
+
+        if (delegate.exitCode) {
+            return null;
+        }
 
         this.collector.collect({
             name: command,

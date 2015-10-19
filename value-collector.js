@@ -19,7 +19,7 @@ ValueCollector.prototype.collect = function collect(value, delegate, cursor) {
 
 ValueCollector.prototype.capture = function capture(delegate, cursor) {
     if (!this.collected && this.required) {
-        delegate.error('Expected: ' + this.name);
+        delegate.error('Required: ' + this.name);
         delegate.cursor(cursor);
     }
     return this.value;

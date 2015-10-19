@@ -8,6 +8,7 @@ function Delegate(assert, expected) {
     this.assert = assert;
     this.expected = expected;
     this.index = 0;
+    this.exitCode = 0;
 }
 
 Delegate.case = function (args, expected) {
@@ -26,6 +27,7 @@ Delegate.prototype.error = function error(message) {
     var key = 'error' + this.index++;
     this.assert.equals(message, this.expected[key], 'Logs ' + key + ': ' + message);
     delete this.expected[key];
+    this.exitCode = 1;
 };
 
 Delegate.prototype.warn = function warn(message) {

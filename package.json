@@ -1,4 +1,5 @@
 {
+  "main": "./command.js",
   "scripts": {
     "test": "node test",
     "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",

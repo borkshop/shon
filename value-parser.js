@@ -13,6 +13,10 @@ ValueParser.prototype.parse = function parse(iterator, delegate) {
         var value = this.converter.convert(argument, delegate);
         if (this.validator.validate(value, delegate)) {
             this.collector.collect(value, delegate);
+            return;
+        } else {
+            delegate.error('Expected: ' + this.name);
+            delegate.cursor(iterator.cursor);
         }
     } else {
         delegate.error('Expected: ' + this.name);
