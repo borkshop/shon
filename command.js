@@ -309,7 +309,7 @@ CommandParser.prototype.parse = function parse(iterator, delegate) {
 
         this.collector.collect({
             name: command,
-            options: options
+            config: options
         });
 
     } else {

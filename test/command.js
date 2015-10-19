@@ -10,7 +10,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     {
         name: 'degenerate case',
         args: [],
-        options: {
+        config: {
             bool: false
         },
         logs: {}
@@ -19,7 +19,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     {
         name: 'provided with short option',
         args: ['-b'],
-        options: {
+        config: {
             bool: true
         },
         logs: {}
@@ -28,7 +28,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     {
         name: 'provided with long option',
         args: ['--bool'],
-        options: {
+        config: {
             bool: true
         },
         logs: {}
@@ -37,7 +37,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     {
         name: 'warn on redudnancy with long options',
         args: ['--bool', '--bool'],
-        options: {
+        config: {
             bool: true
         },
         logs: {
@@ -48,7 +48,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     {
         name: 'warn on redudnancy with short options',
         args: ['-bb'],
-        options: {
+        config: {
             bool: true
         },
         logs: {
@@ -66,7 +66,7 @@ test('command with required -b --bool boolean flag', commandCases(function c(com
     {
         name: 'missing',
         args: [],
-        options: null,
+        config: null,
         logs: {
             error0: 'Required: bool'
         }
@@ -81,7 +81,7 @@ test('option with --no-flag', commandCases(function c(command) {
     {
         name: 'missing',
         args: [],
-        options: {
+        config: {
             strict: true
         }
     },
@@ -89,7 +89,7 @@ test('option with --no-flag', commandCases(function c(command) {
     {
         name: 'provided',
         args: ['--no-strict'],
-        options: {
+        config: {
             strict: false
         }
     }
@@ -103,7 +103,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'elided',
         args: [],
-        options: {
+        config: {
             key: null
         }
     },
@@ -111,7 +111,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'provided with short',
         args: ['-k', 'value'],
-        options: {
+        config: {
             key: 'value'
         }
     },
@@ -119,7 +119,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'provided with long',
         args: ['--key', 'value'],
-        options: {
+        config: {
             key: 'value'
         }
     },
@@ -127,7 +127,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'provided with long in --key=value style',
         args: ['--key=value'],
-        options: {
+        config: {
             key: 'value'
         }
     },
@@ -135,7 +135,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'redundant with short',
         args: ['-kk', 'value', 'value'],
-        options: {
+        config: {
             key: 'value'
         },
         logs: {
@@ -146,7 +146,7 @@ test('command with single value option', commandCases(function c(command) {
     {
         name: 'redundant with short but missing parse value',
         args: ['-kk', 'value'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: value'
         }
@@ -161,7 +161,7 @@ test('command that accepts arguments on short options', commandCases(function c(
     {
         name: 'accepting value on short argument',
         args: ['-kvalue'],
-        options: {
+        config: {
             key: 'value'
         }
     }
@@ -175,7 +175,7 @@ test('command with multiple value option', commandCases(function c(command) {
     {
         name: 'none provided',
         args: [],
-        options: {
+        config: {
             key: []
         }
     },
@@ -183,7 +183,7 @@ test('command with multiple value option', commandCases(function c(command) {
     {
         name: 'one provided, using short',
         args: ['-k', 'value'],
-        options: {
+        config: {
             key: ['value']
         }
     },
@@ -191,7 +191,7 @@ test('command with multiple value option', commandCases(function c(command) {
     {
         name: 'one provided, using conjoined shorts',
         args: ['-kk', '1', '2'],
-        options: {
+        config: {
             key: ['1', '2']
         }
     },
@@ -199,7 +199,7 @@ test('command with multiple value option', commandCases(function c(command) {
     {
         name: 'one and half provided with conjoined shorts',
         args: ['-kk', '1'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: value'
         }
@@ -214,7 +214,7 @@ test('command that accepts multiple values on short options', commandCases(funct
     {
         name: 'accepting value on short argument',
         args: ['-k1', '-k2'],
-        options: {
+        config: {
             key: ['1', '2']
         }
     }
@@ -228,7 +228,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
     {
         name: 'too few',
         args: [],
-        options: null,
+        config: null,
         logs: {
             error0: 'Too few: value'
         }
@@ -237,7 +237,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
     {
         name: 'enough',
         args: ['-k', 'value'],
-        options: {
+        config: {
             key: ['value']
         },
         logs: {
@@ -247,7 +247,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
     {
         name: 'more than enough',
         args: ['-k', 'value', '-k', 'value'],
-        options: {
+        config: {
             key: ['value', 'value']
         },
         logs: {
@@ -257,7 +257,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
     {
         name: 'too many',
         args: ['-kkk', '1', '2', '3'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Too many: value'
         }
@@ -273,7 +273,7 @@ test('command with converter', commandCases(function c(command) {
     {
         name: 'converts an integer',
         args: ['-i', '100'],
-        options: {
+        config: {
             integer: 100
         }
     }
@@ -287,7 +287,7 @@ test('command accepts required argument', commandCases(function c(dwim) {
     {
         name: 'provided',
         args: ['value'],
-        options: {
+        config: {
             name: 'value'
         }
     },
@@ -295,7 +295,7 @@ test('command accepts required argument', commandCases(function c(dwim) {
     {
         name: 'missing',
         args: [],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: name'
         }
@@ -304,7 +304,7 @@ test('command accepts required argument', commandCases(function c(dwim) {
     {
         name: 'extra',
         args: ['good', 'bad'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Unexpected argument: bad'
         }
@@ -322,7 +322,7 @@ test('command accepts multiple arguments', commandCases(function c(dwim) {
     {
         name: 'all missing',
         args: [],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: start',
             error1: 'Expected: stop',
@@ -333,7 +333,7 @@ test('command accepts multiple arguments', commandCases(function c(dwim) {
     {
         name: 'one missing',
         args: ['0', '10'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: step'
         }
@@ -342,7 +342,7 @@ test('command accepts multiple arguments', commandCases(function c(dwim) {
     {
         name: 'all accounted for',
         args: ['0', '10', '1'],
-        options: {
+        config: {
             start: 0,
             stop: 10,
             step: 1
@@ -363,7 +363,7 @@ test('command accepts variadic arguments', commandCases(function c(dwim) {
     {
         name: 'no numbers',
         args: [],
-        options: {
+        config: {
             numbers: []
         }
     },
@@ -371,7 +371,7 @@ test('command accepts variadic arguments', commandCases(function c(dwim) {
     {
         name: 'a number',
         args: ['1'],
-        options: {
+        config: {
             numbers: [1]
         }
     },
@@ -379,7 +379,7 @@ test('command accepts variadic arguments', commandCases(function c(dwim) {
     {
         name: 'some numbers',
         args: ['1', '2', '3'],
-        options: {
+        config: {
             numbers: [1, 2, 3]
         }
     },
@@ -387,7 +387,7 @@ test('command accepts variadic arguments', commandCases(function c(dwim) {
     {
         name: 'invalid number',
         args: ['nope'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Expected: number'
         }
@@ -405,11 +405,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'neither before nor after',
         args: ['rm'],
-        options: {
+        config: {
             f: false,
             command: {
                 name: 'rm',
-                options: {
+                config: {
                     f: false
                 }
             }
@@ -421,11 +421,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'before',
         args: ['-f', 'rm'],
-        options: {
+        config: {
             f: true,
             command: {
                 name: 'rm',
-                options: {
+                config: {
                     f: false
                 }
             }
@@ -437,11 +437,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'after',
         args: ['rm', '-f'],
-        options: {
+        config: {
             f: false,
             command: {
                 name: 'rm',
-                options: {
+                config: {
                     f: true
                 }
             }
@@ -453,11 +453,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'before and after',
         args: ['-f', 'rm', '-f'],
-        options: {
+        config: {
             f: true,
             command: {
                 name: 'rm',
-                options: {
+                config: {
                     f: true
                 }
             }
@@ -469,11 +469,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'independent option profile per command',
         args: ['add'],
-        options: {
+        config: {
             f: false,
             command: {
                 name: 'add',
-                options: {
+                config: {
                 }
             }
         },
@@ -484,7 +484,7 @@ test('command with options subcommand and options', commandCases(function c(dwim
     {
         name: 'unexpected suboption',
         args: ['add', '-f'],
-        options: null,
+        config: null,
         logs: {
             error0: 'Unexpected option: -f'
         }

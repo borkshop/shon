@@ -11,8 +11,8 @@ function commandCases(setup, cases) {
         for (var index = 0; index < cases.length; index++) {
             var c = cases[index];
             var delegate = new Delegate(assert, c.logs || {});
-            var options = command.parse(c.args, 0, delegate);
-            assert.deepEquals(options, c.options, c.name);
+            var config = command.parse(c.args, 0, delegate);
+            assert.deepEquals(config, c.config, c.name);
             delegate.end();
         }
 
