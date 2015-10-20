@@ -43,7 +43,9 @@ function Command() {
 
     for (var index = 0; index < arguments.length; index++) {
         var arg = arguments[index];
-        if (arg.lastIndexOf('--no-', 0) === 0) {
+        if (arg.indexOf(' ') > 0) {
+            this._help.push(arg);
+        } else if (arg.lastIndexOf('--no-', 0) === 0) {
             this._no.push(arg);
             this._default = true;
         } else if (arg.lastIndexOf('--', 0) === 0) {
