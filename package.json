@@ -1,10 +1,26 @@
 {
-  "main": "./command.js",
-  "scripts": {
-    "test": "node test",
-    "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",
-    "view-cover": "opn coverage/index.html"
+  "name": "argz",
+  "description": "A JavaScript command-line argument parser",
+  "author": "Kris Kowal <kris@cixar.com>",
+  "version": "0.0.0",
+  "directories": {
+    "test": "test"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kriskowal/argz.git"
+  },
+  "keywords": [
+    "argument",
+    "parser",
+    "command"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kriskowal/argz/issues"
+  },
+  "homepage": "https://github.com/kriskowal/argz#readme",
+  "main": "./command.js",
   "devDependencies": {
     "faucet": "0.0.1",
     "istanbul": "^0.3.21",
@@ -13,5 +29,10 @@
   },
   "dependencies": {
     "camelcase": "^1.2.1"
+  },
+  "scripts": {
+    "test": "node test",
+    "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",
+    "view-cover": "opn coverage/index.html"
   }
 }
