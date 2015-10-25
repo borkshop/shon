@@ -270,6 +270,9 @@ function setupMultiArgumentParser(parser) {
     parser.args.push(xParser);
     parser.args.push(yParser);
     parser.args.push(zParser);
+    parser.flags['-x'] = xParser;
+    parser.flags['-y'] = yParser;
+    parser.flags['-z'] = zParser;
     return {x: xCollector, y: yCollector, z: zCollector};
 }
 
@@ -293,6 +296,13 @@ test('multiple required argument parser observes missing values', createCase({
         error0: 'Expected: x'
     },
     setup: setupMultiArgumentParser
+}));
+
+test('parser passes over arguments that were collected by flags', createCase({
+    args: ['-y2', '-x1', '3'],
+    logs: {},
+    setup: setupMultiArgumentParser,
+    check: checkMultipleArgumentCollectors
 }));
 
 function setupArgumentsAndFlagsParsers(parser) {
@@ -388,7 +398,7 @@ test('parser fails to validate flag', createCase({
 function setupArrayCollectorParser(commandParser) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(isEven);
-    var collector = new ArrayCollector('x', 'x', 3, 4);
+    var collector = new ArrayCollector('x', 'x', 3, 3);
     var parser = new ValueParser('x', converter, validator, collector, true);
     commandParser.tail = parser;
     commandParser.flags['-x'] = parser;

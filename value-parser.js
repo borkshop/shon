@@ -9,7 +9,9 @@ function ValueParser(name, converter, validator, collector, optional) {
 }
 
 ValueParser.prototype.parse = function parse(iterator, delegate) {
-    if (iterator.hasArgument()) {
+    if (this.collector.collected) {
+        return;
+    } else if (iterator.hasArgument()) {
         var argument = iterator.shiftArgument();
         var value = this.converter.convert(argument, delegate);
         if (this.validator.validate(value, delegate)) {
