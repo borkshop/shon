@@ -9,7 +9,7 @@ Converter.lift = function lift(convert) {
         return convert;
     }
     var converter = new Converter();
-    converter.convert = convert || converter.convert;
+    converter.convert = convert;
     return converter;
 };
 

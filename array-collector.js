@@ -8,18 +8,18 @@ function ArrayCollector(name, valueName, min, max) {
     this.max = max;
 }
 
-ArrayCollector.prototype.collect = function collect(value, delegate, cursor) {
-    if (this.value.length >= this.max) {
+ArrayCollector.prototype.collect = function collect(value, iterator, delegate) {
+    if (this.value.length + 1 >= this.max) {
         delegate.error('Too many: ' + this.valueName);
-        delegate.cursor(cursor);
+        delegate.cursor(iterator.cursor);
     }
     this.value.push(value);
 }
 
-ArrayCollector.prototype.capture = function capture(delegate, cursor) {
+ArrayCollector.prototype.capture = function capture(iterator, delegate) {
     if (this.value.length < this.min) {
         delegate.error('Too few: ' + this.valueName);
-        delegate.cursor(cursor);
+        delegate.cursor(iterator.cursor);
     }
     return this.value;
 };

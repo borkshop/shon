@@ -1,127 +1,104 @@
 'use strict';
 
-// Short options of the form `-fx file` (which is equivalent to `-f file -x`)
-// pose a problem for a parser that pulls values off a cursor.
-// The iterator ensures that defered short options are tracked in a reserve.
-// The Iterator manages a cursor within a particular context, exposing
-// a higher level cursor interface, which can distinguish options from other
-// arguments.
-
-// In the context of consuming an argument, arguments may look like options,
-// e.g., --key=--value and --key --value.
+var assert = require('assert');
 
 function Iterator(cursor) {
     this.cursor = cursor;
-    this.reservedOptions = [];
-    this.reservedArgument = null;
-    this.plusOptions = false;
-    this.shortArguments = false;
+    this.reserve = null;
+    this.reserveFlag = null;
+    this.plusFlags = false;
     this.escaped = false;
 }
 
-Iterator.prototype.hasArgument = function hasArgument() {
-    if (this.reservedArgument !== null) {
+Iterator.prototype.hasFlag = function hasFlag() {
+    if (this.reserveFlag !== null) {
         return true;
     }
-    if (this.cursor.end()) {
+    // if (this.reserve !== null) {
+    //     return false;
+    // }
+    if (this.cursor.done() || this.escaped) {
         return false;
-    }
-    if (this.escaped) {
-        return !this.cursor.end();
     }
     var arg = this.cursor.peek();
     if (arg === '--') {
-        this.escaped = true;
-        this.cursor.shift();
+        return false;
+    } else if (arg.lastIndexOf('--', 0) === 0) {
+        return true;
+    } else if (arg === '-') {
+        return false;
+    } else if (arg.lastIndexOf('-', 0) === 0) {
+        return true;
+    } else if (this.plusFlags && arg.lastIndexOf('+', 0) === 0) {
+        return true;
+    } else {
+        return false;
     }
-    return !this.cursor.end();
 };
 
-Iterator.prototype.nextArgument = function nextArgument() {
-    var arg = this.reservedArgument;
-    if (arg !== null) {
-        this.reservedArgument = null;
-        return arg;
-    }
-    if (this.cursor.end()) {
-        return null;
-    }
-    if (this.escaped) {
-        return this.cursor.shift();
-    }
-    arg = this.cursor.shift();
-    if (arg === '--') {
-        this.escaped = true;
-        if (this.cursor.end()) {
-            return null;
-        }
+Iterator.prototype.shiftFlag = function shiftFlag() {
+    assert(this.hasFlag(), 'unable to shift flag');
+    var arg;
+    if (this.reserveFlag !== null) {
+        arg = this.reserveFlag + this.reserve;
+        this.reserveFlag = null;
+        this.reserve = null;
+    } else {
         arg = this.cursor.shift();
     }
-    return arg;
-};
-
-Iterator.prototype.hasOption = function hasOption() {
-    if (this.reservedOptions.length) {
-        return true;
-    }
-    if (this.escaped || this.cursor.end()) {
-        return false;
-    }
-    var arg = this.cursor.peek();
-    if (arg === '--') {
-        return false; // escape
-    } else if (arg.lastIndexOf('--', 0) === 0) {
-        return true; // long option
-    } else if (arg === '-') {
-        return false; // - is a valid argument
-    } else if (
-        arg.lastIndexOf('-', 0) === 0 ||
-        (this.plusOptions && arg.lastIndexOf('+', 0) === 0)
-    ) {
-        return true; // short option
-    } else {
-        return false; // argument
-    }
-};
-
-Iterator.prototype.nextOption = function nextOption() {
-    if (this.reservedOptions.length) {
-        return this.reservedOptions.shift();
-    }
-    if (this.cursor.end()) {
-        return null;
-    }
-    var arg = this.cursor.shift();
+    // invariant: arg is a flag
+    // so not --, not -, not + if + not accepted
     var index;
     if (arg.lastIndexOf('--', 0) === 0) {
         index = arg.indexOf('=', 2);
         if (index >= 2) {
-            this.reservedArgument = arg.slice(index + 1);
+            this.reserve = arg.slice(index + 1);
+            this.reserveFlag = null;
             return arg.slice(0, index);
         } else {
             return arg;
         }
-    } else if (
-        arg.lastIndexOf('-', 0) === 0 ||
-        (this.plusOptions && arg.lastIndexOf('+', 0) === 0)
-    ) {
-        if (this.shortArguments && arg.length > 2) {
-            this.reservedArgument = arg.slice(2);
-            return arg.slice(0, 2);
-        } else {
-            this.unravel(arg);
-        }
     }
-    if (this.reservedOptions.length) {
-        return this.reservedOptions.shift();
+    // invariant: arg[0] is + or -
+    if (arg.length > 2) {
+        this.reserve = arg.slice(2);
+        this.reserveFlag = arg[0];
+        return arg.slice(0, 2);
+    } else {
+        return arg;
     }
-    return arg;
 };
 
-Iterator.prototype.unravel = function unravel(arg) {
-    for (var index = 1; index < arg.length; index++) {
-        this.reservedOptions.push(arg[0] + arg[index]);
+Iterator.prototype.shiftEscape = function shiftEscape() {
+    if (
+        this.reserve === null &&
+        !this.cursor.done() &&
+        !this.escaped &&
+        this.cursor.peek() === '--'
+    ) {
+        this.escaped = true;
+        this.cursor.shift();
+        return true;
     }
+    return false;
+};
+
+Iterator.prototype.hasArgument = function hasArgument() {
+    // invariant: shiftEscape has been called to clear out --
+    if (this.reserve !== null) {
+        return true;
+    }
+    return !this.cursor.done();
+};
+
+Iterator.prototype.shiftArgument = function shiftArgument() {
+    if (this.reserve !== null) {
+        var reserve = this.reserve;
+        this.reserveFlag = null;
+        this.reserve = null;
+        return reserve;
+    }
+    return this.cursor.shift();
 };
 
 module.exports = Iterator;

@@ -7,20 +7,20 @@ function ValueCollector(name, value, required) {
     this.required = required;
 }
 
-ValueCollector.prototype.collect = function collect(value, delegate, cursor) {
+ValueCollector.prototype.collect = function collect(value, iterator, delegate) {
     if (this.collected) {
         delegate.warn('Redundant: ' + this.name);
-        delegate.cursor(cursor);
+        delegate.cursor(iterator.cursor);
         return;
     }
     this.collected = true;
     this.value = value;
 };
 
-ValueCollector.prototype.capture = function capture(delegate, cursor) {
+ValueCollector.prototype.capture = function capture(iterator, delegate) {
     if (!this.collected && this.required) {
         delegate.error('Required: ' + this.name);
-        delegate.cursor(cursor);
+        delegate.cursor(iterator.cursor);
     }
     return this.value;
 };

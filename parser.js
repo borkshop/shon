@@ -1,69 +1,86 @@
 'use strict';
 
-var Cursor = require('./cursor');
-var Iterator = require('./iterator');
-
-function Parser(name) {
-    this.name = name;
-    // Parsers:
-    this.options = {};
-    this.args = [];
-    this.tail = null;
-    this.plusOptions = false;
-    this.shortArguments = false;
+function Parser() {
+    this.flags = {}; // for all keyword arguments
+    this.args = []; // for all positional arguments
+    this.tail = null; // for all arguments following positional args
+    this.escape = null; // for arguments after --, otherwise consumed as non-option arguments
+    this.plus = null; // for +10 and other positive numbers
+    this.minus = null; // for -10 and other negative numbers
 }
 
-Parser.prototype.parse = function parse(iterator, delegate, context) {
-    iterator = new Iterator(iterator.cursor);
-    iterator.plusOptions = this.plusOptions;
-    iterator.shortArguments = this.shortArguments;
+Parser.prototype.parse = function parse(iterator, delegate) {
 
-    while (iterator.hasOption()) {
-        this.parseOption(iterator, delegate, context);
-    }
-
-    // Interleaved arguments and options until the arguments in the schema run
-    // dry.
-    var index = 0;
-    for (; index < this.args.length; index++) {
-        var arg = this.args[index];
-        if (iterator.hasOption()) {
-            this.parseOption(iterator, delegate, context);
-        } else {
-            arg.parse(iterator, delegate, context);
+    for (var index = 0; index < this.args.length; index++) {
+        this.parseFlags(iterator, delegate);
+        this.args[index].parse(iterator, delegate);
+        if (delegate.exitCode !== 0) {
+            break;
         }
     }
 
-    while (iterator.hasOption()) {
-        this.parseOption(iterator, delegate, context);
+    // expect end of input unless tail
+    this.parseFlags(iterator, delegate);
+    if (!this.tail) {
+        if (iterator.hasArgument()) {
+            delegate.error('Unexpected argument: ' + JSON.stringify(iterator.shiftArgument()));
+            delegate.cursor(iterator.cursor);
+        }
+        return;
     }
 
-    if (!this.tail && iterator.hasArgument()) {
-        delegate.error('Unexpected argument: ' + iterator.nextArgument(), iterator.cursor);
-        return null;
-    }
-
-    // Parse interleaved arguments and options until the source runs dry.
-    while (iterator.hasArgument() || iterator.hasOption()) {
-        if (iterator.hasOption()) {
-            this.parseOption(iterator, delegate, context);
-        } else if (iterator.hasArgument()) {
-            this.tail.parse(iterator, delegate, context);
+    // parse tail arguments
+    for (;;) {
+        this.parseFlags(iterator, delegate);
+        if (!iterator.hasArgument()) {
+            break;
+        }
+        this.tail.parse(iterator, delegate);
+        if (delegate.exitCode !== 0) {
+            break;
         }
     }
-
-    return null;
 };
 
-Parser.prototype.parseOption = function parseOption(iterator, delegate, context) {
-    var option = iterator.nextOption();
-    if (this.options[option]) {
-        this.options[option].parse(iterator, delegate, context);
-        return true;
+Parser.prototype.parseFlags = function parseFlags(iterator, delegate) {
+    for (;;) {
+        this.parseEscape(iterator, delegate);
+        if (!iterator.hasFlag()) {
+            break;
+        }
+        this.parseFlag(iterator, delegate);
+    }
+};
+
+Parser.prototype.parseFlag = function parseFlag(iterator, delegate) {
+    var flag = iterator.shiftFlag();
+    if (this.flags[flag]) {
+        this.flags[flag].parse(iterator, delegate);
+    } else if (flag.lastIndexOf('-', 0) === 0 && recognizeInteger(flag.slice(1))) {
+        iterator.reserve = flag;
+        this.minus.parse(iterator, delegate);
+    } else if (flag.lastIndexOf('+', 0) === 0 && recognizeInteger(flag.slice(1))) {
+        iterator.reserve = flag;
+        this.plus.parse(iterator, delegate);
     } else {
-        delegate.error('Unexpected option: ' + option, iterator.cursor);
-        return false;
+        delegate.error('Unexpected flag: ' + JSON.stringify(flag));
+        delegate.cursor(iterator.cursor);
+    }
+    if (iterator.reserve !== null && iterator.reserveFlag === null) {
+        delegate.error('Unexpected argument for flag: ' + JSON.stringify(iterator.reserve));
+        delegate.cursor(iterator.cursor);
+        iterator.reserve = null;
     }
 };
+
+Parser.prototype.parseEscape = function parseEscape(iterator, delegate) {
+    if (iterator.shiftEscape() && this.escape) {
+        this.escape.parse(iterator, delegate);
+    }
+};
+
+function recognizeInteger(text) {
+    return /^[0-9]+$/.test(text);
+}
 
 module.exports = Parser;

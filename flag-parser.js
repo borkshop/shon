@@ -5,8 +5,8 @@ function FlagParser(value, collector) {
     this.collector = collector;
 }
 
-FlagParser.prototype.parse = function parse(cursor, delegate) {
-    this.collector.collect(this.value, delegate);
+FlagParser.prototype.parse = function parse(iterator, delegate) {
+    this.collector.collect(this.value, iterator, delegate);
 };
 
 module.exports = FlagParser;

@@ -9,7 +9,7 @@ Validator.lift = function lift(validate) {
         return validate;
     }
     var validator = new Validator();
-    validator.validate = validate || validator.validate;
+    validator.validate = validate;
     return validator;
 };
 

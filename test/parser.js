@@ -1,327 +1,542 @@
 'use strict';
 
 var test = require('tape');
-
 var Delegate = require('./delegate');
 var Cursor = require('../cursor');
 var Iterator = require('../iterator');
 var Parser = require('../parser');
+var FlagParser = require('../flag-parser');
+var ValueParser = require('../value-parser');
+var ValueCollector = require('../value-collector');
+var ArrayCollector = require('../array-collector');
+var DifferenceCollector = require('../difference-collector');
+var Converter = require('../converter');
+var Validator = require('../validator');
 
-function ValueParser(name) {
-    this.name = name;
-}
+function createCase(test) {
+    return function t(assert) {
+        var cursor = new Cursor(test.args, 0);
+        var iterator = new Iterator(cursor);
+        var parser = new Parser();
 
-ValueParser.prototype.parse = function parse(iterator, delegate, context) {
-    if (iterator.hasArgument()) {
-        context[this.name] = iterator.nextArgument();
-    } else {
-        delegate.error('Expected value for: ' + this.name, iterator.cursor);
-        return;
+        var scaffold;
+        if (test.setup) {
+            scaffold = test.setup(parser, iterator);
+        }
+
+        var delegate = new Delegate(assert, test.logs);
+        parser.parse(iterator, delegate);
+
+        if (test.check && delegate.exitCode === 0) {
+            test.check(assert, iterator, delegate, scaffold);
+        }
+
+        delegate.end();
+        assert.end();
     }
-    // TODO redundancy detection
-    // TODO coercion
-    // TODO validation
-};
-
-ValueParser.prototype.expected = function expected(delegate) {
-    delegate.error('Expected: ' + this.name);
-};
-
-function ArrayParser(name) {
-    this.name = name;
 }
 
-ArrayParser.prototype.parse = function parse(iterator, delegate, context) {
-    // TODO redundancy detection
-    // TODO coercion
-    // TODO validation
-    context[this.name].push(iterator.nextArgument());
-};
+test('empty parser accepts empty args', createCase({
+    args: []
+}));
 
-ArrayParser.prototype.expected = function expected(delegate) {
-    delegate.error('Expected: ' + this.name);
-};
+test('empty parser does not recognize dash arg', createCase({
+    args: ['-'],
+    logs: {
+        error0: 'Unexpected argument: "-"'
+    }
+}));
 
-function BooleanParser(name, def) {
-    this.name = name;
-    this.default = def || false;
+test('empty parser accepts escape in lieu of args', createCase({
+    args: ['--']
+}));
+
+test('empty parser fails to recognize arg that looks like flag after escape', createCase({
+    args: ['--', '-a'],
+    logs: {
+        error0: 'Unexpected argument: "-a"'
+    }
+}));
+
+function setupFlagParser(parser) {
+    var flagCollector = new ValueCollector('x', false, false);
+    var flagParser = new FlagParser(true, flagCollector);
+    parser.flags['-x'] = flagParser;
+    parser.flags['--x'] = flagParser;
+    return flagCollector;
 }
 
-BooleanParser.prototype = Object.create(ValueParser.prototype);
-BooleanParser.prototype.constructor = BooleanParser;
-
-BooleanParser.prototype.parse = function parse(cursor, delegate, context) {
-    context[this.name] = !this.default;
-};
-
-function CounterParser(name, delta) {
-    this.name = name;
-    this.delta = delta || 1;
+function checkCapturedFlag(assert, iterator, delegate, flagCollector) {
+    assert.equals(flagCollector.capture(iterator, delegate), true, 'flag captured');
 }
 
-CounterParser.prototype = Object.create(ValueParser.prototype);
-CounterParser.prototype.constructor = CounterParser;
+function checkDefaultedFlag(assert, iterator, delegate, flagCollector) {
+    assert.equals(flagCollector.capture(iterator, delegate), false, 'default fell through');
+}
 
-CounterParser.prototype.parse = function parse(cursor, delegate, context) {
-    context[this.name] += this.delta;
-};
-
-module.exports = CounterParser;
-
-test('one unrecognized flag', Delegate.case(['-a'], {
-    error0: 'Unexpected option: -a'
+test('flag parser captures default', createCase({
+    args: [],
+    logs: {},
+    setup: setupFlagParser
 }));
 
-test('multiple unrecognized flags combined', Delegate.case(['-ab'], {
-    error0: 'Unexpected option: -a',
-    error1: 'Unexpected option: -b'
+test('flag parser captures set flag', createCase({
+    args: ['-x'],
+    logs: {},
+    setup: setupFlagParser
 }));
 
-test('one unrecognized option', Delegate.case(['--a'], {
-    error0: 'Unexpected option: --a'
+test('flag parser recognizes redudnant flag', createCase({
+    args: ['-x', '-x'],
+    logs: {
+        warn0: 'Redundant: x'
+    },
+    setup: setupFlagParser
 }));
 
-test('two unrecognized options', Delegate.case(['--a', '--b'], {
-    error0: 'Unexpected option: --a',
-    error1: 'Unexpected option: --b'
+test('flag parser recognizes redudnant flag in compact form', createCase({
+    args: ['-xx'],
+    logs: {
+        warn0: 'Redundant: x'
+    },
+    setup: setupFlagParser
 }));
 
-test('just an escape', Delegate.case(['--'], {
+test('flag parser recognizes long flag', createCase({
+    args: ['--x'],
+    logs: {},
+    setup: setupFlagParser
 }));
 
-test('double escape', Delegate.case(['--', '--'], {
-    error0: 'Unexpected argument: --'
+test('flag parser recognizes redundant long flag', createCase({
+    args: ['--x', '--x'],
+    logs: {
+        warn0: 'Redundant: x'
+    },
+    setup: setupFlagParser
 }));
 
-test('extraneous argument', Delegate.case(['arg'], {
-    error0: 'Unexpected argument: arg'
+test('flag parser recognizes superfluous argument on long flag', createCase({
+    args: ['--x=y'],
+    logs: {
+        error0: 'Unexpected argument for flag: "y"'
+    },
+    setup: setupFlagParser
 }));
 
-test('extraneous argument after escape', Delegate.case(['--', 'arg'], {
-    error0: 'Unexpected argument: arg'
+test('flag parser recognizes superfluous empty string argument on long flag', createCase({
+    args: ['--x='],
+    logs: {
+        error0: 'Unexpected argument for flag: ""'
+    },
+    setup: setupFlagParser
 }));
 
-test('grabs a non-optional argument', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['bar'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.args.push(new ValueParser('foo'));
-    var context = {};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {'foo': 'bar'}, 'produces context');
-    delegate.end();
-    assert.end();
-});
+test('flag parser recognizes superfluous argument after flag', createCase({
+    args: ['--x', 'y'],
+    logs: {
+        error0: 'Unexpected argument: "y"'
+    },
+    setup: setupFlagParser
+}));
 
-test('complains of a missing argument', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor([], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {
-        error0: 'Expected value for: foo'
+test('flag parser recognizes superfluous escaped argument after flag', createCase({
+    args: ['--x', '--', 'y'],
+    logs: {
+        error0: 'Unexpected argument: "y"'
+    },
+    setup: setupFlagParser
+}));
+
+test('flag parser does not recognize unknown flag', createCase({
+    args: ['-y'],
+    logs: {
+        error0: 'Unexpected flag: "-y"'
+    },
+    setup: setupFlagParser
+}));
+
+function setupValueParser(parser) {
+    var xConverter = new Converter();
+    var xValidator = new Validator();
+    var xCollector = new ValueCollector('x', null, false);
+    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    parser.flags['-x'] = xParser;
+    parser.flags['--x'] = xParser;
+    return xCollector;
+}
+
+function checkDefaultedValue(assert, iterator, delegate, valueCollector) {
+    assert.equals(valueCollector.capture(iterator, delegate), null, 'default captured');
+}
+
+function checkGivenValue(assert, iterator, delegate, valueCollector) {
+    assert.equals(valueCollector.capture(iterator, delegate), 'y', 'value captured');
+}
+
+test('value parser recognizes missing argument', createCase({
+    args: ['-x'],
+    logs: {
+        error0: 'Expected: x'
+    },
+    setup: setupValueParser
+}));
+
+test('value parser recognizes missing argument in long form', createCase({
+    args: ['--x'],
+    logs: {
+        error0: 'Expected: x'
+    },
+    setup: setupValueParser
+}));
+
+test('value parser captures value in short form', createCase({
+    args: ['-x', 'y'],
+    logs: {
+    },
+    setup: setupValueParser,
+    check: checkGivenValue
+}));
+
+test('value parser captures value in compact short form', createCase({
+    args: ['-xy'],
+    logs: {
+    },
+    setup: setupValueParser,
+    check: checkGivenValue
+}));
+
+test('value parser captures value in long form', createCase({
+    args: ['--x', 'y'],
+    logs: {
+    },
+    setup: setupValueParser,
+    check: checkGivenValue
+}));
+
+test('value parser captures value in compact long form', createCase({
+    args: ['--x=y'],
+    logs: {
+    },
+    setup: setupValueParser,
+    check: checkGivenValue
+}));
+
+function setupRequiredValueParser(parser) {
+    var xConverter = new Converter();
+    var xValidator = new Validator();
+    var xCollector = new ValueCollector('x', null, true);
+    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    parser.flags['-x'] = xParser;
+    parser.flags['--x'] = xParser;
+    return xCollector;
+}
+
+test('required value parser requires value for flag', createCase({
+    args: [],
+    logs: {
+        error0: 'Required: x'
+    },
+    setup: setupRequiredValueParser,
+    check: checkDefaultedValue
+}));
+
+function setupRequiredArgumentParser(parser) {
+    var xConverter = new Converter();
+    var xValidator = new Validator();
+    var xCollector = new ValueCollector('x', null, true);
+    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    parser.args.push(xParser);
+    return xCollector;
+}
+
+test('required value parser requires value for argument', createCase({
+    args: [],
+    logs: {
+        error0: 'Expected: x'
+    },
+    setup: setupRequiredArgumentParser
+}));
+
+function setupMultiArgumentParser(parser) {
+    var converter = new Converter();
+    var validator = new Validator();
+    var xCollector = new ValueCollector('x', null, true);
+    var yCollector = new ValueCollector('y', null, true);
+    var zCollector = new ValueCollector('z', null, true);
+    var xParser = new ValueParser('x', converter, validator, xCollector);
+    var yParser = new ValueParser('y', converter, validator, yCollector);
+    var zParser = new ValueParser('z', converter, validator, zCollector);
+    parser.args.push(xParser);
+    parser.args.push(yParser);
+    parser.args.push(zParser);
+    return {x: xCollector, y: yCollector, z: zCollector};
+}
+
+function checkMultipleArgumentCollectors(assert, iterator, delegate, collectors) {
+    assert.equals(collectors.x.capture(iterator, delegate), '1', 'x captured');
+    assert.equals(collectors.y.capture(iterator, delegate), '2', 'y captured');
+    assert.equals(collectors.z.capture(iterator, delegate), '3', 'z captured');
+}
+
+test('multiple required argument parser collects all values', createCase({
+    args: ['1', '2', '3'],
+    logs: {
+    },
+    setup: setupMultiArgumentParser,
+    check: checkMultipleArgumentCollectors
+}));
+
+test('multiple required argument parser observes missing values', createCase({
+    args: [],
+    logs: {
+        error0: 'Expected: x'
+    },
+    setup: setupMultiArgumentParser
+}));
+
+function setupArgumentsAndFlagsParsers(parser) {
+    var converter = Converter.lift({
+        convert: String
     });
-    parser.args.push(new ValueParser('foo'));
-    var context = {foo: 'baz'};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {foo: 'baz'}, 'context contains default');
-    delegate.end();
-    assert.end();
-});
-
-test('takes a default for a missing option', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor([], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options.foo = new ValueParser('foo');
-    var context = {foo: 'baz'};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {'foo': 'baz'}, 'context contains default');
-    delegate.end();
-    assert.end();
-});
-
-test('accepts an option', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['--foo', 'bar'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['--foo'] = new ValueParser('foo');
-    var context = {};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {'foo': 'bar'}, 'context contains default');
-    delegate.end();
-    assert.end();
-});
-
-test('accepts a sequence of boolean flags', function t(assert) {
-    var parser = new Parser();
-    parser.options['-a'] = new BooleanParser('alpha');
-    parser.options['-b'] = new BooleanParser('beta');
-    parser.options['-c'] = new BooleanParser('gamma');
-    var cursor = new Cursor(['-abc'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    var context = {};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {alpha: true, beta: true, gamma: true}, 'context contains flags');
-    delegate.end();
-    assert.end();
-});
-
-test('counts flags', function t(assert) {
-    var parser = new Parser();
-    parser.options['-v'] = new CounterParser('verbose');
-    var cursor = new Cursor(['-vvv'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    var context = {verbose: 0};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {verbose: 3}, 'elevates verbosity');
-    delegate.end();
-    assert.end();
-});
-
-test('up and down counter', function t(assert) {
-    var parser = new Parser();
-    parser.options['-v'] = new CounterParser('verbose');
-    parser.options['-q'] = new CounterParser('verbose', -1);
-    var cursor = new Cursor(['-vvvq'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    var context = {verbose: 0};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {verbose: 2}, 'zeros in on verbosity');
-    delegate.end();
-    assert.end();
-});
-
-test('plus or minus', function t(assert) {
-    var parser = new Parser();
-    parser.options['+n'] = new CounterParser('number');
-    parser.options['-n'] = new CounterParser('number', -1);
-    parser.plusOptions = true;
-    var cursor = new Cursor(['+nnn', '-nn'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    var context = {number: 0};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {number: 1}, 'finds number');
-    delegate.end();
-    assert.end();
-});
-
-test('no pluses', function t(assert) {
-    var parser = new Parser();
-    parser.options['+n'] = new CounterParser('number');
-    parser.options['-n'] = new CounterParser('number', -1);
-    var cursor = new Cursor(['-nn', '+nnn'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {
-        error0: 'Unexpected argument: +nnn'
+    var validator = Validator.lift({
+        validate: True
     });
-    var context = {number: 0};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {number: -2}, 'finds number');
-    delegate.end();
-    assert.end();
-});
+    var xCollector = new ValueCollector('x', null, true);
+    var yCollector = new ValueCollector('y', null, true);
+    var zCollector = new ValueCollector('z', null, true);
+    var xParser = new ValueParser('x', converter, validator, xCollector, true);
+    var yParser = new ValueParser('y', converter, validator, yCollector, true);
+    var zParser = new ValueParser('z', converter, validator, zCollector, true);
+    parser.args.push(xParser);
+    parser.args.push(yParser);
+    parser.args.push(zParser);
+    parser.flags['-x'] = xParser;
+    parser.flags['-y'] = yParser;
+    parser.flags['-z'] = zParser;
+    return {x: xCollector, y: yCollector, z: zCollector};
+}
 
-test('--key=value style', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['-x', '--key=value'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['--key'] = new ValueParser('key');
-    parser.options['-x'] = new BooleanParser('excalibur');
-    var context = {};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {key: 'value', excalibur: true}, 'parses --key=value style long option');
-    delegate.end();
-    assert.end();
-});
+function True() {
+    return true;
+}
 
-test('option-like values', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['-x', '--key', '--value'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['--key'] = new ValueParser('key');
-    parser.options['-x'] = new BooleanParser('excalibur');
-    var context = {};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {key: '--value', excalibur: true}, 'parses option value that looks like option');
-    delegate.end();
-    assert.end();
-});
+test('parser accepts interleaved combination of positional and flag arguments', createCase({
+    args: ['1', '-z', '3', '2'],
+    setup: setupArgumentsAndFlagsParsers,
+    check: checkMultipleArgumentCollectors
+}));
 
-test('push long options onto an array', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['--letter', 'a', '--letter', 'b', '--letter', 'c'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['--letter'] = new ArrayParser('letters');
-    var context = {letters: []};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses repeated long options');
-    delegate.end();
-    assert.end();
-});
+test('parser accepts interleaved combination of positional and compact flag arguments', createCase({
+    args: ['-y2', '1', '-z3'],
+    setup: setupArgumentsAndFlagsParsers,
+    check: checkMultipleArgumentCollectors
+}));
 
-test('push short cut-like options onto an array', function t(assert) {
-    var parser = new Parser();
-    parser.shortArguments = true;
-    var cursor = new Cursor(['-la', '-lb', '-lc'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['-l'] = new ArrayParser('letters');
-    var context = {letters: []};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses like cut');
-    delegate.end();
-    assert.end();
-});
+function setupConverterValidatorParser(commandParser) {
+    var converter = Converter.lift(Number);
+    var validator = Validator.lift(isEven);
+    var collector = new ValueCollector('x', null, true);
+    var parser = new ValueParser('x', converter, validator, collector, true);
+    commandParser.args.push(parser);
+    commandParser.flags['-x'] = parser;
+    return collector;
+}
 
-test('push short options onto an array', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['-l', 'a', '-l', 'b', '-l', 'c'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['-l'] = new ArrayParser('letters');
-    var context = {letters: []};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each -l');
-    delegate.end();
-    assert.end();
-});
+function checkConvertedValue(assert, iterator, delegate, collector) {
+    assert.equals(collector.capture(iterator, delegate), 10, 'captures valid value');
+}
 
-test('push joined short options onto an array', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['-lll', 'a', 'b', 'c'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.options['-l'] = new ArrayParser('letters');
-    var context = {letters: []};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {letters: ['a', 'b', 'c']}, 'parses each flag after -lll');
-    delegate.end();
-    assert.end();
-});
+function isEven(n) {
+    return n % 2 === 0;
+}
 
-test('tail parser for vargs', function t(assert) {
-    var parser = new Parser();
-    var cursor = new Cursor(['a', 'b', 'c'], 0);
-    var iterator = new Iterator(cursor);
-    var delegate = new Delegate(assert, {});
-    parser.tail = new ArrayParser('vargs');
-    var context = {vargs: []};
-    parser.parse(iterator, delegate, context);
-    assert.deepEquals(context, {vargs: ['a', 'b', 'c']}, 'parses variable trailing args');
-    delegate.end();
-    assert.end();
-});
+test('parser converts argument', createCase({
+    args: ['10'],
+    logs: {
+    },
+    setup: setupConverterValidatorParser,
+    check: checkConvertedValue
+}));
 
-// TODO test('complains but deals with redundancy', function t(assert) {
-// TODO     assert.end();
-// TODO });
+test('parser fails to validate argument', createCase({
+    args: ['a'],
+    logs: {
+        error0: 'Invalid: x'
+    },
+    setup: setupConverterValidatorParser,
+    check: checkDefaultedValue
+}));
+
+test('parser converts flag', createCase({
+    args: ['-x10'],
+    logs: {
+    },
+    setup: setupConverterValidatorParser,
+    check: checkConvertedValue
+}));
+
+test('parser fails to validate flag', createCase({
+    args: ['-xa'],
+    logs: {
+        error0: 'Invalid: x'
+    },
+    setup: setupConverterValidatorParser,
+    check: checkDefaultedValue
+}));
+
+function setupArrayCollectorParser(commandParser) {
+    var converter = Converter.lift(Number);
+    var validator = Validator.lift(isEven);
+    var collector = new ArrayCollector('x', 'x', 3, 4);
+    var parser = new ValueParser('x', converter, validator, collector, true);
+    commandParser.tail = parser;
+    commandParser.flags['-x'] = parser;
+    return collector;
+}
+
+function checkArray(assert, iterator, delegate, collector) {
+    assert.deepEquals(collector.capture(iterator, delegate), [2, 4, 6], 'captures array of values');
+}
+
+function checkEmptyArray(assert, iterator, delegate, collector) {
+    assert.deepEquals(collector.capture(iterator, delegate), [], 'captures empty array');
+}
+
+test('parser collects array of arguments', createCase({
+    args: ['2', '4', '6'],
+    logs: {
+    },
+    setup: setupArrayCollectorParser,
+    check: checkArray
+}));
+
+test('parser collects array from tail arguments and flags', createCase({
+    args: ['2', '-x4', '6'],
+    logs: {
+    },
+    setup: setupArrayCollectorParser,
+    check: checkArray
+}));
+
+test('parser collects array of arguments dispite one invalid value', createCase({
+    args: ['2', '4', '6', 'not like the others'],
+    logs: {
+        error0: 'Invalid: x'
+    },
+    setup: setupArrayCollectorParser,
+    check: checkArray
+}));
+
+test('parser stops parsing at the first invalid value', createCase({
+    args: ['2', '4', '6', 'not like the others', '8'],
+    logs: {
+        error0: 'Invalid: x'
+    },
+    setup: setupArrayCollectorParser,
+    check: checkArray
+}));
+
+test('parser recognizes too few arguments', createCase({
+    args: [],
+    logs: {
+        error0: 'Too few: x'
+    },
+    setup: setupArrayCollectorParser,
+    check: checkEmptyArray
+}));
+
+test('parser recognizes too many arguments', createCase({
+    args: ['0', '2', '4', '8'],
+    logs: {
+        error0: 'Too many: x'
+    },
+    setup: setupArrayCollectorParser,
+    check: checkArray
+}));
+
+function setupDifferenceCollectorParser(parser, iterator) {
+    iterator.plusFlags = true;
+    var converter = Converter.lift(Number);
+    var validator = Validator.lift(True);
+    var collector = new DifferenceCollector('n', 5);
+    parser.plus = new ValueParser('n', converter, validator, collector);
+    parser.minus = new ValueParser('n', converter, validator, collector);
+    return collector;
+}
+
+function makeValueChecker(value) {
+    return function checkValue(assert, iterator, delegate, collector) {
+        assert.equals(collector.capture(iterator, delegate), value, 'captured expected value');
+    };
+}
+
+test('parser finds no difference with no args', createCase({
+    args: [],
+    logs: {},
+    setup: setupDifferenceCollectorParser,
+    check: makeValueChecker(5)
+}));
+
+test('parser takes difference one step forward, two steps back', createCase({
+    args: ['+1', '-2'],
+    logs: {},
+    setup: setupDifferenceCollectorParser,
+    check: makeValueChecker(4)
+}));
+
+function setupVerbosityParser(parser, iterator) {
+    var collector = new DifferenceCollector('verbosity', 0, -5, 5);
+    parser.flags['-v'] = new FlagParser(1, collector);
+    parser.flags['-q'] = new FlagParser(-1, collector);
+    return collector;
+}
+
+test('parser finds increased verbosity', createCase({
+    args: ['-vv'],
+    logs: {},
+    setup: setupVerbosityParser,
+    check: makeValueChecker(2)
+}));
+
+test('parser finds decreased verbosity', createCase({
+    args: ['-qqqqq'],
+    logs: {},
+    setup: setupVerbosityParser,
+    check: makeValueChecker(-5)
+}));
+
+test('parser finds too much verbosity', createCase({
+    args: ['-vvvvvv'],
+    logs: {
+        error0: 'Too much: verbosity (maximum is 5)'
+    },
+    setup: setupVerbosityParser,
+    check: makeValueChecker(6)
+}));
+
+test('parser finds too little verbosity', createCase({
+    args: ['-qqqqqq'],
+    logs: {
+        error0: 'Too little: verbosity (minimum is -5)'
+    },
+    setup: setupVerbosityParser,
+    check: makeValueChecker(-6)
+}));
+
+function setupEscapedExpressionParser(parser) {
+    var subParser = new Parser();
+    parser.escape = subParser;
+    var valueCollector = new ValueCollector('x', null, true);
+    var valueParser = new ValueParser('x', new Converter(), new Validator(), valueCollector);
+    subParser.args.push(valueParser);
+    return valueCollector;
+}
+
+test('escaped expression subparser captures arguments', createCase({
+    args: ['--', '10'],
+    logs: {
+    },
+    setup: setupEscapedExpressionParser,
+    check: makeValueChecker('10')
+}));

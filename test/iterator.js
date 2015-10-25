@@ -8,114 +8,118 @@ test('empty', function t(assert) {
     var cursor = new Cursor([], 0);
     var iterator = new Iterator(cursor);
 
-    assert.equals(iterator.hasOption(), false, 'no options');
-    assert.equals(iterator.nextArgument(), null, 'no arguments');
+    assert.equals(iterator.hasFlag(), false, 'no flags');
+    assert.equals(iterator.hasArgument(), false, 'no arguments');
     assert.end();
 });
 
-test('lone short option', function t(assert) {
+test('lone short flag', function t(assert) {
     var cursor = new Cursor(['-a'], 0);
     var iterator = new Iterator(cursor);
-    assert.ok(iterator.hasOption(), 'has short option');
+    assert.ok(iterator.hasFlag(), 'has short flag');
 
-    assert.equals(iterator.nextOption(), '-a', 'got short option');
-    assert.equals(iterator.hasOption(), false, 'no further options');
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.shiftFlag(), '-a', 'got short flag');
+    assert.equals(iterator.hasFlag(), false, 'no further flags');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
-test('lone long option', function t(assert) {
+test('lone long flag', function t(assert) {
     var cursor = new Cursor(['--a'], 0);
     var iterator = new Iterator(cursor);
-    assert.ok(iterator.hasOption(), 'has long option');
+    assert.ok(iterator.hasFlag(), 'has long flag');
 
-    assert.equals(iterator.nextOption(), '--a', 'gets long option');
-    assert.ok(!iterator.hasOption(), 'no more options after long option');
+    assert.equals(iterator.shiftFlag(), '--a', 'gets long flag');
+    assert.ok(!iterator.hasFlag(), 'no more flags after long flag');
 
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
 test('lone escape', function t(assert) {
     var cursor = new Cursor(['--'], 0);
     var iterator = new Iterator(cursor);
-    assert.equals(iterator.hasOption(), false, 'escape is not an option');
-    assert.equals(iterator.nextArgument(), null, 'escape is not an argument');
+    assert.equals(iterator.hasFlag(), false, 'escape is not an flag');
+    assert.equals(iterator.shiftEscape(), true, 'escape consumed');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
 test('lone hyphen', function t(assert) {
     var cursor = new Cursor(['-'], 0);
     var iterator = new Iterator(cursor);
-    assert.ok(!iterator.hasOption(), 'hyphen is not an option');
-    assert.equal(iterator.nextArgument(), '-', 'hyphen is an argument');
-    assert.equal(iterator.nextArgument(), null, 'no further arguments');
+    assert.ok(!iterator.hasFlag(), 'hyphen is not an flag');
+    assert.equal(iterator.shiftArgument(), '-', 'hyphen is an argument');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
-test('short options', function t(assert) {
+test('short flags', function t(assert) {
     var cursor = new Cursor(['-a', '-b'], 0);
     var iterator = new Iterator(cursor);
 
-    assert.equals(iterator.hasOption(), true, 'has short option 1');
-    assert.equals(iterator.nextOption(), '-a', 'got short option 1');
+    assert.equals(iterator.hasFlag(), true, 'has short flag 1');
+    assert.equals(iterator.shiftFlag(), '-a', 'got short flag 1');
 
-    assert.equals(iterator.hasOption(), true, 'has short option 2');
-    assert.equals(iterator.nextOption(), '-b', 'got short option 2');
+    assert.equals(iterator.hasFlag(), true, 'has short flag 2');
+    assert.equals(iterator.shiftFlag(), '-b', 'got short flag 2');
 
-    assert.equals(iterator.hasOption(), false, 'no further options');
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.hasFlag(), false, 'no further flags');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
-test('escape then option', function t(assert) {
+test('escape then flag', function t(assert) {
     var cursor = new Cursor(['--', '-a'], 0);
     var iterator = new Iterator(cursor);
-    assert.equals(iterator.hasOption(), false, 'escape is not an option, nor that after');
-    assert.equals(iterator.nextArgument(), '-a', 'argument after escape');
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.hasFlag(), false, 'escape is not an flag, nor that after');
+    assert.equals(iterator.shiftEscape(), true, 'escape is consumed');
+    assert.equals(iterator.shiftArgument(), '-a', 'argument after escape');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
 test('escape then escape', function t(assert) {
     var cursor = new Cursor(['--', '--'], 0);
     var iterator = new Iterator(cursor);
-    assert.equals(iterator.hasOption(), false, 'escape is not an option, nor that after');
-    assert.equals(iterator.nextArgument(), '--', 'escape after escape');
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.hasFlag(), false, 'escape is not an flag, nor that after');
+    assert.equals(iterator.shiftEscape(), true, 'escape consumed');
+    assert.equals(iterator.shiftEscape(), false, 'second escape not consumed');
+    assert.equals(iterator.shiftArgument(), '--', 'escape after escape');
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
-test('read options as arguments', function t(assert) {
+test('read flags as arguments', function t(assert) {
     var cursor = new Cursor(['-a', '-b'], 0);
     var iterator = new Iterator(cursor);
 
-    assert.equals(iterator.nextArgument(), '-a', 'can consume option as plain arg1');
-    assert.equals(iterator.nextArgument(), '-b', 'can consume option as plain arg2');
-    assert.equals(iterator.nextArgument(), null, 'no further arguments');
+    assert.equals(iterator.shiftArgument(), '-a', 'can consume flag as plain arg1');
+    assert.equals(iterator.shiftArgument(), '-b', 'can consume flag as plain arg2');
 
+    assert.equals(iterator.hasArgument(), false, 'no further arguments');
     assert.end();
 });
 
-test('cut-like arguments', function t(assert) {
-    var cursor = new Cursor(['-d, ', '-f:'], 0);
+test('short flags with arguments', function t(assert) {
+    var cursor = new Cursor(['-abc'], 0);
     var iterator = new Iterator(cursor);
-    iterator.shortArguments = true;
 
-    assert.equals(iterator.hasOption(), true, 'has an option');
-    assert.equals(iterator.hasArgument(), true, 'could be used as an argument');
-    assert.equals(iterator.nextOption(), '-d', 'gets -d option');
-    assert.equals(iterator.hasArgument(), true, 'has argument');
-    assert.equals(iterator.nextArgument(), ', ', 'gets ", " value for option');
+    assert.equals(iterator.hasFlag(), true, 'has -a flag');
+    assert.equals(iterator.shiftFlag(), '-a', 'shift one flag');
+    assert.equals(iterator.reserveFlag, '-', 'reserves - flag');
+    assert.equals(iterator.reserve, 'bc', 'reserves bc');
 
-    assert.equals(iterator.hasOption(), true, '-f is up next');
-    assert.equals(iterator.hasArgument(), true, 'it could be used as an argument');
-    assert.equals(iterator.nextOption(), '-f', 'gets -f option');
-    assert.equals(iterator.hasArgument(), true, 'has argument');
-    assert.equals(iterator.nextArgument(), ':', 'gets ":" value for option');
+    assert.equals(iterator.hasFlag(), true, 'has -b flag');
+    assert.equals(iterator.shiftFlag(), '-b', 'shift second flag');
+    assert.equals(iterator.reserveFlag, '-', 'reserves - flag');
+    assert.equals(iterator.reserve, 'c', 'reserves c');
 
-    assert.equals(iterator.hasOption(), false, 'no further options');
+    assert.equals(iterator.hasFlag(), true, 'has -c flag');
+    assert.equals(iterator.shiftFlag(), '-c', 'shift third flag');
+    assert.equals(iterator.reserveFlag, null, 'no reserved flag');
+    assert.equals(iterator.reserve, null, 'no more reserve');
+
     assert.equals(iterator.hasArgument(), false, 'no further arguments');
-
     assert.end();
 });

@@ -8,7 +8,7 @@ function Cursor(args, index) {
 }
 
 Cursor.prototype.peek = function peek() {
-    assert.ok(!this.end(), 'cannot peek');
+    assert.ok(!this.done(), 'cannot peek');
     return this.args[this.index];
 };
 
@@ -16,7 +16,7 @@ Cursor.prototype.shift = function shift() {
     return this.args[this.index++];
 };
 
-Cursor.prototype.end = function end() {
+Cursor.prototype.done = function done() {
     return this.index >= this.args.length;
 };
 
