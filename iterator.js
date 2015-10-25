@@ -101,4 +101,11 @@ Iterator.prototype.shiftArgument = function shiftArgument() {
     return this.cursor.shift();
 };
 
+Iterator.prototype.initialFlag = function initialFlag() {
+    if (!this.hasFlag() && this.hasArgument()) {
+        this.reserve = this.shiftArgument();
+        this.reserveFlag = '-';
+    }
+};
+
 module.exports = Iterator;

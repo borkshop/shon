@@ -540,3 +540,24 @@ test('escaped expression subparser captures arguments', createCase({
     setup: setupEscapedExpressionParser,
     check: makeValueChecker('10')
 }));
+
+function setupInitialFlagsParser(parser, iterator) {
+    iterator.initialFlag();
+    var collector = new ValueCollector('x', false, true);
+    parser.flags['-x'] = new FlagParser(true, collector);
+    return collector;
+}
+
+test('initial flag parser recognizes first argument as flag', createCase({
+    args: ['x'],
+    logs: {},
+    setup: setupInitialFlagsParser,
+    check: makeValueChecker(true)
+}));
+
+test('initial flag parser recognizes first flag', createCase({
+    args: ['-x'],
+    logs: {},
+    setup: setupInitialFlagsParser,
+    check: makeValueChecker(true)
+}));
