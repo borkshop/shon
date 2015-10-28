@@ -4,88 +4,74 @@ var Cursor = require('./cursor');
 var Iterator = require('./iterator');
 var Parser = require('./parser');
 var Delegate = require('./delegate');
-var camelcase = require('camelcase');
-
 var ValueCollector = require('./value-collector');
 var ArrayCollector = require('./array-collector');
 // TODO var DifferenceCollector = require('./difference-collector');
 // TODO SetCollector
-
 var Converter = require('./converter');
 var Validator = require('./validator');
-
 var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
+var CommandParser = require('./command-parser');
 
-function Command() {
 
-    this._name = null;
-    this._displayName = null;
-    this._argumentName = null;
-    this._terms = [];
-    this._options = [];
-    this._arguments = [];
-    this._commands = [];
-    this._help = [];
-    this._shortArgument = false;
+var parseUsage = require('./usage');
 
-    this._long = [];
-    this._short = [];
-    this._no = [];
-    this._required = false;
-    this._minLength = 0;
-    this._maxLength = Infinity;
-    this._command = false;
-    this._collectorType = null;
-    this._converterType = null;
-    this._validatorType = null;
-    this._default = null;
-
-    for (var index = 0; index < arguments.length; index++) {
-        var arg = arguments[index];
-        if (arg.indexOf(' ') > 0) {
-            this._help.push(arg);
-        } else if (arg.lastIndexOf('--no-', 0) === 0) {
-            this._no.push(arg);
-            this._default = true;
-        } else if (arg.lastIndexOf('--', 0) === 0) {
-            this._long.push(arg);
-        } else if (
-            arg.length > 4 &&
-            arg[0] === '-' ||
-            arg[2] === '<' &&
-            arg[arg.length - 1] === '>'
-        ) {
-            // -k<value>
-            this._short.push(arg.slice(0, 2));
-            this._argumentName = arg.slice(3, arg.length - 1);
-            this._shortArgument = true;
-        } else if (arg.length === 2 && arg[0] === '-') {
-            this._short.push(arg);
-        } else if (
-            arg.lastIndexOf('<', 0) === 0 &&
-            arg.indexOf('>', arg.length - 1) > 0
-        ) {
-            this._argumentName = arg.slice(1, arg.length - 1);
-        } else if (/[a-z]+/.test(arg)) {
-            this._name = arg;
-        } else {
-            throw new Error('Unrecognized argument to Command: ' + arg);
-        }
+function Command(name, terms) {
+    if (typeof name !== 'string') {
+        throw new Error('Command(name, terms) name must be a string');
     }
-
-    if (this._name === null) {
-        if (this._long.length) {
-            this._name = camelcase(this._long[0]);
-        } else if (this._no.length) {
-            this._name = camelcase(this._no[0].slice(5));
-        } else if (this._argumentName !== null) {
-            this._name = camelcase(this._argumentName);
-        } else if (this._short.length) {
-            this._name = camelcase(this._short[0]);
+    if (!terms || typeof terms !== 'object') {
+        throw new Error('Command(name, terms) terms must be an object');
+    }
+    this._name = name;
+    this._terms = [];
+    var names = Object.keys(terms);
+    for (var index = 0; index < names.length; index++) {
+        name = names[index];
+        var term = terms[name];
+        if (typeof term === 'object') {
+            this._terms.push(subcommand(name, term));
+        } else if (typeof term === 'string') {
+            var result = parseUsage(terms[name]);
+            if (result.err) {
+                throw result.err;
+            }
+            this[name] = result.value;
+            this[name].name = name;
+            this._terms.push(this[name]);
         }
     }
 }
+
+function subcommand(name, commands) {
+    var choices = {};
+    var keys = Object.keys(commands);
+    for (var index = 0; index < keys.length; index++) {
+        var key = keys[index];
+        choices[key] = new Command(key, commands[key]);
+    }
+    return {
+        name: name,
+        flags: [],
+        arg: 'command',
+        commands: choices,
+        collectorType: null,
+        validatorType: 'options',
+        required: null,
+        help: null,
+        default: null
+    };
+}
+
+Command.prototype.exec = function exec(args, index, delegate) {
+    delegate = delegate || new Delegate();
+    var config = this.parse(args, index);
+    if (config === null) {
+        return delegate.end();
+    }
+    return config;
+};
 
 Command.prototype.parse = function parse(args, index, delegate) {
     var cursor = new Cursor(args, index);
@@ -97,126 +83,93 @@ Command.prototype.parse = function parse(args, index, delegate) {
 Command.prototype._parse = function parse(iterator, delegate) {
     var parser = new Parser();
     var collectors = [];
-    this._setup(parser, collectors);
+    this._setup(parser, collectors, iterator, delegate);
+    if (delegate.exitCode) {
+        return null;
+    }
     parser.parse(iterator, delegate);
     if (delegate.exitCode) {
         return null;
     }
-    return this._collect(collectors, delegate, iterator.cursor);
+    return this._capture(collectors, iterator, delegate);
 };
 
-Command.prototype.option = function option() {
-    var term = Object.create(Command.prototype);
-    Command.apply(term, arguments);
-    this._terms.push(term);
-    this._options.push(term);
-    return term;
-};
+Command.prototype._setup = function setup(parser, collectors, iterator, delegate) {
 
-Command.prototype.argument = function argument() {
-    var term = Object.create(Command.prototype);
-    Command.apply(term, arguments);
-    term._required = true;
-    this._terms.push(term);
-    this._arguments.push(term);
-    return term;
-};
-
-Command.prototype.command = function command() {
-    var term = Object.create(Command.prototype);
-    Command.apply(term, arguments);
-    term._command = true;
-    this._terms.push(term);
-    this._commands.push(term);
-    return term;
-};
-
-Command.prototype.name = function name(name) {
-    this._name = name;
-    return this;
-};
-
-Command.prototype.help = function help(line) {
-    this._help.push(line);
-    return this;
-};
-
-Command.prototype.int = function int() {
-    this._converter = Number;
-    this._validator = isInteger;
-    return this;
-};
-
-function isInteger(n) {
-    return n >= 0;
-}
-
-Command.prototype.number = function int() {
-    this._converter = Number;
-    return this;
-};
-
-Command.prototype.push = function push(min, max) {
-    this._collectorType = 'array';
-    this._minLength = min || 0;
-    this._maxLength = max || Infinity;
-    return this;
-};
-
-Command.prototype.add = function add() {
-    this._collectorType = 'set';
-    return this;
-};
-
-Command.prototype.validate = function validate(validator) {
-    this._validator = Validator.lift(validator);
-    return this;
-};
-
-Command.prototype.convert = function convert(converter) {
-    this._converter = Converter.lift(converter);
-    return this;
-};
-
-// TODO collect
-
-Command.prototype.required = function required() {
-    this._required = true;
-    this._minLength = Math.max(this._minLength, 1);
-    return this;
-};
-
-Command.prototype.optional = function optional() {
-    this._required = false;
-    this._minLength = 0;
-    return this;
-};
-
-Command.prototype.default = function _default(value) {
-    this._required = false;
-    this._default = value;
-    return this;
-};
-
-Command.prototype._setup = function setup(parser, collectors) {
-    // TODO support for optional command, fallback on missing
-    var commandCollector = new ValueCollector('command', null, true);
-    var commands = {};
-    if (this._commands.length) {
-        var commandParser = new CommandParser(commands, commandCollector);
-        parser.args.push(commandParser);
-        collectors.push(commandCollector);
-    }
     for (var index = 0; index < this._terms.length; index++) {
-        this._terms[index]._setupParser(parser, collectors, commands, commandCollector);
+        var term = this._terms[index];
+
+        // scan for whether any flag has a specified value
+        var def = null;
+        var isBoolean = term.arg === null;
+        for (var findex = 0; findex < term.flags.length && isBoolean; findex++) {
+            var flag = term.flags[findex];
+            if (flag.value != null) {
+                isBoolean = false;
+            }
+        }
+
+        var converter = setupConverter(term, isBoolean);
+        var validator = setupValidator(term);
+
+        // scan for a flag that has a default value
+        for (var findex = 0; findex < term.flags.length; findex++) {
+            var flag = term.flags[findex];
+            if (flag.default) {
+                def = converter.convert(flag.value, iterator, delegate);
+                if (delegate.exitCode !== 0) {
+                    return;
+                }
+                if (!validator.validate(def, iterator, delegate)) {
+                    delegate.error('Invalid default: ' + def);
+                    return;
+                }
+                break;
+            }
+        }
+
+        // boolean flags are false by default, unless otherwise specified
+        if (def === null && term.arg === null) {
+            def = false;
+        }
+
+        var collector = setupCollector(term, def);
+
+        // if there are flags, set up parsers for each flag
+        for (var findex = 0; findex < term.flags.length; findex++) {
+            var flag = term.flags[findex];
+            var termParser = setupTermParser(term, flag, def, converter, validator, collector, delegate);
+            if (delegate.exitCode !== 0) {
+                return;
+            }
+            parser.flags[flag.flag] = termParser;
+        }
+
+        // if there are no flags, this is purely an argument
+        if (term.flags.length === 0) {
+            var termParser = setupTermParser(term, null, def, converter, validator, collector, delegate);
+            if (delegate.exitCode !== 0) {
+                return;
+            }
+            if (term.collectorType === null) {
+                // assert parser.tail === null
+                parser.args.push(termParser);
+            } else if (parser.tail === null) {
+                parser.tail = termParser;
+            } else {
+                // assert this cannot be
+            }
+        }
+
+        collectors.push(collector);
     }
 };
 
-Command.prototype._collect = function collect(collectors, delegate, cursor) {
+Command.prototype._capture = function capture(collectors, iterator, delegate) {
     var context = {};
     for (var index = 0; index < collectors.length; index++) {
         var collector = collectors[index];
-        context[collector.name] = collector.capture(delegate, cursor);
+        context[collector.name] = collector.capture(iterator, delegate);
     }
     if (delegate.exitCode) {
         return null;
@@ -224,102 +177,81 @@ Command.prototype._collect = function collect(collectors, delegate, cursor) {
     return context;
 };
 
-Command.prototype._setupParser = function setup(parser, collectors, commands, commandCollector) {
-
-    if (this._command && this._name) {
-        commands[this._name] = this;
-        return;
-        // TODO option-style commands, e.g., -h, --help
-        // TODO command is optional
-        // TODO no command given fallback
-    }
-
-    // flags are false by default
-    if (this._argumentName === null && this._default === null) {
-        this._default = false;
-    }
-
+function setupCollector(term, def) {
     var collector;
-    if (this._collectorType === 'array') {
-        collector = new ArrayCollector(this._name, this._argumentName, this._minLength, this._maxLength);
+    if (term.collectorType === 'array') {
+        collector = new ArrayCollector(term.name, term.arg, term.minLength, term.maxLength);
     } else {
-        collector = new ValueCollector(this._name, this._default, this._required);
+        collector = new ValueCollector(term.name, def, term.required);
     }
-
-    var converter = Converter.lift(this._converter);
-    var validator = Validator.lift(this._validator);
-
-    parser.shortArguments = parser.shortArguments || this._shortArgument;
-
-    var termParser;
-    if (this._argumentName === null) {
-        termParser = new FlagParser(true, collector);
-    } else {
-        termParser = new ValueParser(this._argumentName, converter, validator, collector);
-    }
-
-    for (var index = 0; index < this._short.length; index++) {
-        parser.options[this._short[index]] = termParser;
-    }
-
-    for (var index = 0; index < this._long.length; index++) {
-        parser.options[this._long[index]] = termParser;
-    }
-
-    if (this._no.length) {
-        termParser = new FlagParser(false, collector);
-        for (var index = 0; index < this._no.length; index++) {
-            parser.options[this._no[index]] = termParser;
-        }
-    }
-
-    if (this._short.length === 0 && this._long.length === 0 && this._no.length === 0) {
-        if (this._collectorType === null) {
-            if (parser.tail !== null) {
-                throw new Error('This command cannot be'); // TODO
-            }
-            parser.args.push(termParser);
-        } else if (parser.tail === null) {
-            parser.tail = termParser;
-        } else {
-            throw new Error('This command cannot be'); // TODO
-        }
-    }
-
-    collectors.push(collector);
-};
-
-function CommandParser(commands, collector) {
-    this.commands = commands;
-    this.collector = collector;
+    return collector;
 }
 
-CommandParser.prototype.parse = function parse(iterator, delegate) {
-    if (iterator.hasArgument()) {
-        var command = iterator.nextArgument();
-
-        if (!(command in this.commands)) {
-            delegate.error('Unrecognized command: ' + command);
-            return null;
-        }
-
-        var options = this.commands[command]._parse(iterator, delegate);
-
-        if (delegate.exitCode) {
-            return null;
-        }
-
-        this.collector.collect({
-            name: command,
-            config: options
-        });
-
-    } else {
-        delegate.error('Expected a command');
-        delegate.cursor(iterator.cursor);
-        // TODO one of
-        return null;
+function setupValidator(term) {
+    var validator;
+    if (term.validator) {
+        validator = term.validator;
+    } else if (term.validatorType === 'number') {
+        validator = isNumber;
+    } else if (term.validatorType === 'positive') {
+        validator = isPositive;
+    } else if (term.validatorType === 'options') {
+        // TODO
+    } else if (term.validator) {
+        validator = term.validator;
     }
-};
+    return Validator.lift(validator);
+}
+
+function setupConverter(term, isBoolean) {
+    var converter;
+    if (term.converter) {
+        converter = term.converter;
+    } else if (isBoolean || term.converterType === 'boolean') {
+        converter = convertBoolean;
+    } else if (term.converterType === 'number') {
+        converter = Number;
+    }
+    return Converter.lift(converter);
+}
+
+function setupTermParser(term, flag, value, converter, validator, collector, delegate) {
+    if (term.commands) {
+        return new CommandParser(term.commands, collector);
+    } else if (term.arg === null) {
+        // Establish the value for flags
+        if (flag && flag.value != null) {
+            value = converter.convert(flag.value);
+            if (!validator.validate(value)) {
+                delegate.error('Invalid flag value: ' + flag.value + ' for ' + term.name); // TODO
+            }
+        } else {
+            value = !value;
+        }
+
+        return new FlagParser(value, collector);
+    } else {
+        return new ValueParser(term.arg, converter, validator, collector);
+    }
+}
+
+function isPositive(number) {
+    return number === number && number >= 0;
+}
+
+function isNumber(number) {
+    return number === number;
+}
+
+function convertBoolean(string, iterator, delegate) {
+    if (string === 'true') {
+        return true;
+    } else if (string === 'false') {
+        return false;
+    } else {
+        delegate.error('Must be true or false');
+        delegate.cursor(iterator.cursor);
+    }
+}
 
 module.exports = Command;

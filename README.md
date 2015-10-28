@@ -262,6 +262,30 @@ sum a
     ^
 ```
 
+## Subcommands
+
+```js
+var Command = require('argz');
+var store = new Command('db');
+
+var set = store.command('set');
+set.argument('<key>');
+set.argument('<value>');
+
+var get = store.command('get');
+get.argument('<key>');
+
+var rm = store.command('rm');
+rm.option('-f', '--force');
+```
+
+```
+$ db set a 10
+$ db get a
+10
+$ db rm a
+```
+
 ---
 
 Copyright (c) 2009-2015 Contributors

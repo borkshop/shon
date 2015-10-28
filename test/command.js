@@ -1,11 +1,27 @@
 'use strict';
 
 var test = require('tape');
-var commandCases = require('./cases');
+var Command = require('../command');
+var Delegate = require('./delegate');
 
-test('command with -b --bool boolean flag', commandCases(function c(command) {
-    command.option('-b', '--bool');
-}, [
+function cases(command, cases) {
+    return function t(assert) {
+        for (var index = 0; index < cases.length; index++) {
+            var c = cases[index];
+            assert.comment(c.name);
+            var delegate = new Delegate(assert, c.logs || {});
+            var config = command.parse(c.args, 0, delegate);
+            assert.deepEquals(config, c.config, c.name);
+            delegate.end();
+        }
+
+        assert.end();
+    };
+}
+
+test('optional boolean flag', cases(new Command('dwim', {
+    bool: '[-b|--bool]'
+}), [
 
     {
         name: 'degenerate case',
@@ -17,7 +33,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     },
 
     {
-        name: 'provided with short option',
+        name: 'provided with short flag',
         args: ['-b'],
         config: {
             bool: true
@@ -26,7 +42,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     },
 
     {
-        name: 'provided with long option',
+        name: 'provided with long flag',
         args: ['--bool'],
         config: {
             bool: true
@@ -35,7 +51,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     },
 
     {
-        name: 'warn on redudnancy with long options',
+        name: 'warn on redudnancy with long flags',
         args: ['--bool', '--bool'],
         config: {
             bool: true
@@ -46,7 +62,7 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
     },
 
     {
-        name: 'warn on redudnancy with short options',
+        name: 'warn on redudnancy with short flags',
         args: ['-bb'],
         config: {
             bool: true
@@ -54,29 +70,28 @@ test('command with -b --bool boolean flag', commandCases(function c(command) {
         logs: {
             warn0: 'Redundant: bool'
         }
-    },
+    }
 
 ]));
 
-test('command with required -b --bool boolean flag', commandCases(function c(command) {
-    command.option('-b', '--bool')
-        .required();
-}, [
+test('required boolean flag', cases(new Command('dwim', {
+    bool: '-b|--bool'
+}), [
 
     {
-        name: 'missing',
+        name: 'missing required flag',
         args: [],
         config: null,
         logs: {
             error0: 'Required: bool'
         }
-    },
+    }
 
 ]));
 
-test('option with --no-flag', commandCases(function c(command) {
-    command.option('--no-strict');
-}, [
+test('flag with --no-flag', cases(new Command('dwim', {
+    strict: '[--no-strict=false|--strict=true*] :boolean'
+}), [
 
     {
         name: 'missing',
@@ -96,9 +111,9 @@ test('option with --no-flag', commandCases(function c(command) {
 
 ]));
 
-test('command with single value option', commandCases(function c(command) {
-    command.option('-k', '--key', '<value>');
-}, [
+test('command with optional single value flag', cases(new Command('dwim', {
+    key: '[-k|--key <value>]'
+}), [
 
     {
         name: 'elided',
@@ -133,32 +148,6 @@ test('command with single value option', commandCases(function c(command) {
     },
 
     {
-        name: 'redundant with short',
-        args: ['-kk', 'value', 'value'],
-        config: {
-            key: 'value'
-        },
-        logs: {
-            warn0: 'Redundant: key'
-        }
-    },
-
-    {
-        name: 'redundant with short but missing parse value',
-        args: ['-kk', 'value'],
-        config: null,
-        logs: {
-            error0: 'Expected: value'
-        }
-    },
-
-]));
-
-test('command that accepts arguments on short options', commandCases(function c(command) {
-    command.option('key', '-k<value>');
-}, [
-
-    {
         name: 'accepting value on short argument',
         args: ['-kvalue'],
         config: {
@@ -168,9 +157,24 @@ test('command that accepts arguments on short options', commandCases(function c(
 
 ]));
 
-test('command with multiple value option', commandCases(function c(command) {
-    command.option('-k', '--key', '<value>').push();
-}, [
+test('command with required single value flag', cases(new Command('dwim', {
+    value: '-k|--key <value>'
+}), [
+
+    {
+        name: 'missing required flag',
+        args: [],
+        config: null,
+        logs: {
+            error0: 'Required: value'
+        }
+    }
+
+]));
+
+test('command with multiple value flag', cases(new Command('dwim', {
+    key: '-k|--key <value>...'
+}), [
 
     {
         name: 'none provided',
@@ -186,30 +190,13 @@ test('command with multiple value option', commandCases(function c(command) {
         config: {
             key: ['value']
         }
-    },
-
-    {
-        name: 'one provided, using conjoined shorts',
-        args: ['-kk', '1', '2'],
-        config: {
-            key: ['1', '2']
-        }
-    },
-
-    {
-        name: 'one and half provided with conjoined shorts',
-        args: ['-kk', '1'],
-        config: null,
-        logs: {
-            error0: 'Expected: value'
-        }
-    },
+    }
 
 ]));
 
-test('command that accepts multiple values on short options', commandCases(function c(command) {
-    command.option('-k<value>').name('key').push();
-}, [
+test('command that accepts multiple values on short flags', cases(new Command('dwim', {
+    key: '-k <value> ...'
+}), [
 
     {
         name: 'accepting value on short argument',
@@ -221,9 +208,9 @@ test('command that accepts multiple values on short options', commandCases(funct
 
 ]));
 
-test('command with minimum and maximum of an option', commandCases(function c(command) {
-    command.option('-k', 'key', '<value>').push(1, 2);
-}, [
+test('command with minimum and maximum of an flag', cases(new Command('dwim', {
+    key: '-k <value> {1..2}'
+}), [
 
     {
         name: 'too few',
@@ -256,7 +243,7 @@ test('command with minimum and maximum of an option', commandCases(function c(co
 
     {
         name: 'too many',
-        args: ['-kkk', '1', '2', '3'],
+        args: ['-k1', '-k2', '-k3'],
         config: null,
         logs: {
             error0: 'Too many: value'
@@ -265,10 +252,71 @@ test('command with minimum and maximum of an option', commandCases(function c(co
 
 ]));
 
-test('command with converter', commandCases(function c(command) {
-    command.option('-i', '<integer>')
-        .convert(Number);
-}, [
+test('command with quantity type', cases(new Command('dwim', {
+    integer: '-i <quantity> :quantity'
+}), [
+
+    {
+        name: 'converts an integer',
+        args: ['-i', '100'],
+        config: {
+            integer: 100
+        }
+    },
+
+    {
+        name: 'fails to convert negative value',
+        args: ['-i', '-100'],
+        config: null,
+        logs: {
+            error0: 'Invalid: quantity'
+        }
+    },
+
+    {
+        name: 'fails to convert non-number',
+        args: ['-i', 'not a number'],
+        config: null,
+        logs: {
+            error0: 'Invalid: quantity'
+        }
+    }
+
+]));
+
+test('command with boolean type', cases(new Command('dwim', {
+    toBe: '-b <bool> :boolean'
+}), [
+
+    {
+        name: 'recognizes truth',
+        args: ['-b', 'true'],
+        config: {toBe: true}
+    },
+
+    {
+        name: 'recognizes falsehood',
+        args: ['-b', 'false'],
+        config: {toBe: false}
+    },
+
+    {
+        name: 'recognizes invalid boolean',
+        args: ['-b', 'maybe'],
+        config: null,
+        logs: {
+            error0: 'Must be true or false'
+        }
+    },
+
+]));
+
+var convertible = new Command('dwim', {
+    integer: '-i <integer>'
+});
+convertible.integer.converter = Number;
+
+test('command with converter', cases(convertible, [
 
     {
         name: 'converts an integer',
@@ -280,9 +328,9 @@ test('command with converter', commandCases(function c(command) {
 
 ]));
 
-test('command accepts required argument', commandCases(function c(dwim) {
-    dwim.argument('<name>');
-}, [
+test('command accepts required argument', cases(new Command('dwim', {
+    name: '<name>'
+}), [
 
     {
         name: 'provided',
@@ -306,27 +354,25 @@ test('command accepts required argument', commandCases(function c(dwim) {
         args: ['good', 'bad'],
         config: null,
         logs: {
-            error0: 'Unexpected argument: bad'
+            error0: 'Unexpected argument: "bad"'
         }
     }
 
 
 ]));
 
-test('command accepts multiple arguments', commandCases(function c(dwim) {
-    dwim.argument('<start>').int();
-    dwim.argument('<stop>').int();
-    dwim.argument('<step>').int();
-}, [
+test('command accepts multiple arguments', cases(new Command('dwim', {
+    start: '<start> :number',
+    stop: '<stop> :number',
+    step: '<step> :number'
+}), [
 
     {
         name: 'all missing',
         args: [],
         config: null,
         logs: {
-            error0: 'Expected: start',
-            error1: 'Expected: stop',
-            error2: 'Expected: step'
+            error0: 'Expected: start'
         }
     },
 
@@ -351,14 +397,9 @@ test('command accepts multiple arguments', commandCases(function c(dwim) {
 
 ]));
 
-test('command accepts variadic arguments', commandCases(function c(dwim) {
-    dwim.argument('numbers', '<number>')
-        .convert(Number)
-        .validate(function isNumber(arg) {
-            return +arg === arg;
-        })
-        .push();
-}, [
+test('command accepts variadic arguments', cases(new Command('dwim', {
+    numbers: '<number>... :number'
+}), [
 
     {
         name: 'no numbers',
@@ -389,28 +430,32 @@ test('command accepts variadic arguments', commandCases(function c(dwim) {
         args: ['nope'],
         config: null,
         logs: {
-            error0: 'Expected: number'
+            error0: 'Invalid: number'
         }
     }
 
 ]));
 
-test('command with options subcommand and options', commandCases(function c(dwim) {
-    dwim.option('-f');
-    var rm = dwim.command('rm')
-    rm.option('-f');
-    var add = dwim.command('add');
-}, [
+test('command with flags subcommand and flags', cases(new Command('dwim', {
+    force: '[-f]',
+    command: {
+        rm: {
+            force: '[-f]'
+        },
+        add: {
+        }
+    }
+}), [
 
     {
         name: 'neither before nor after',
         args: ['rm'],
         config: {
-            f: false,
+            force: false,
             command: {
                 name: 'rm',
                 config: {
-                    f: false
+                    force: false
                 }
             }
         },
@@ -422,11 +467,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
         name: 'before',
         args: ['-f', 'rm'],
         config: {
-            f: true,
+            force: true,
             command: {
                 name: 'rm',
                 config: {
-                    f: false
+                    force: false
                 }
             }
         },
@@ -438,11 +483,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
         name: 'after',
         args: ['rm', '-f'],
         config: {
-            f: false,
+            force: false,
             command: {
                 name: 'rm',
                 config: {
-                    f: true
+                    force: true
                 }
             }
         },
@@ -454,11 +499,11 @@ test('command with options subcommand and options', commandCases(function c(dwim
         name: 'before and after',
         args: ['-f', 'rm', '-f'],
         config: {
-            f: true,
+            force: true,
             command: {
                 name: 'rm',
                 config: {
-                    f: true
+                    force: true
                 }
             }
         },
@@ -467,10 +512,10 @@ test('command with options subcommand and options', commandCases(function c(dwim
     },
 
     {
-        name: 'independent option profile per command',
+        name: 'independent flag profile per command',
         args: ['add'],
         config: {
-            f: false,
+            force: false,
             command: {
                 name: 'add',
                 config: {
@@ -482,13 +527,31 @@ test('command with options subcommand and options', commandCases(function c(dwim
     },
 
     {
-        name: 'unexpected suboption',
+        name: 'unexpected subflag',
         args: ['add', '-f'],
         config: null,
         logs: {
-            error0: 'Unexpected option: -f'
+            error0: 'Unexpected flag: "-f"'
         }
     },
+
+    {
+        name: 'unrecognized command',
+        args: ['ls'],
+        config: null,
+        logs: {
+            error0: 'Unknown command: ls'
+        }
+    },
+
+    {
+        name: 'expected command',
+        args: ['-f'],
+        config: null,
+        logs: {
+            error0: 'Expected a command'
+        }
+    }
 
 ]));
 

@@ -8,18 +8,19 @@ function ValueParser(name, converter, validator, collector, optional) {
     this.optional = optional;
 }
 
-ValueParser.prototype.parse = function parse(iterator, delegate) {
+ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
     if (this.collector.collected) {
         return;
-    } else if (iterator.hasArgument()) {
+    }
+    if (iterator.hasArgument()) {
         var argument = iterator.shiftArgument();
-        var value = this.converter.convert(argument, delegate);
+        var value = this.converter.convert(argument, iterator, delegate, flag);
         if (this.validator.validate(value, delegate)) {
             this.collector.collect(value, iterator, delegate);
             return;
         } else {
             delegate.error('Invalid: ' + this.name);
-            delegate.cursor(iterator.cursor);
+            delegate.cursor(iterator.cursor, -1);
         }
     } else if (!this.optional) {
         delegate.error('Expected: ' + this.name);

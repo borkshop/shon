@@ -24,7 +24,7 @@ Parser.prototype.parse = function parse(iterator, delegate) {
     if (!this.tail) {
         if (iterator.hasArgument()) {
             delegate.error('Unexpected argument: ' + JSON.stringify(iterator.shiftArgument()));
-            delegate.cursor(iterator.cursor);
+            delegate.cursor(iterator.cursor, -1);
         }
         return;
     }
@@ -57,11 +57,15 @@ Parser.prototype.parseFlag = function parseFlag(iterator, delegate) {
     if (this.flags[flag]) {
         this.flags[flag].parse(iterator, delegate);
     } else if (flag.lastIndexOf('-', 0) === 0 && recognizeInteger(flag.slice(1))) {
-        iterator.reserve = flag;
-        this.minus.parse(iterator, delegate);
+        if (this.minus) {
+            iterator.reserve = flag;
+            this.minus.parse(iterator, delegate);
+        }
     } else if (flag.lastIndexOf('+', 0) === 0 && recognizeInteger(flag.slice(1))) {
-        iterator.reserve = flag;
-        this.plus.parse(iterator, delegate);
+        if (this.plus) {
+            iterator.reserve = flag;
+            this.plus.parse(iterator, delegate);
+        }
     } else {
         delegate.error('Unexpected flag: ' + JSON.stringify(flag));
         delegate.cursor(iterator.cursor);
