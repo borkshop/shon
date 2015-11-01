@@ -14,8 +14,7 @@ var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
 var CommandParser = require('./command-parser');
 
-
-var parseUsage = require('./usage');
+var usage = require('./usage');
 
 function Command(name, terms) {
     if (typeof name !== 'string') {
@@ -26,6 +25,7 @@ function Command(name, terms) {
     }
     this._name = name;
     this._terms = [];
+    this._usage = [];
     var names = Object.keys(terms);
     for (var index = 0; index < names.length; index++) {
         name = names[index];
@@ -33,13 +33,14 @@ function Command(name, terms) {
         if (typeof term === 'object') {
             this._terms.push(subcommand(name, term));
         } else if (typeof term === 'string') {
-            var result = parseUsage(terms[name]);
+            var result = usage.parse(terms[name]);
             if (result.err) {
                 throw result.err;
             }
             this[name] = result.value;
             this[name].name = name;
             this._terms.push(this[name]);
+            this._usage.push(term);
         }
     }
 }
@@ -66,8 +67,16 @@ function subcommand(name, commands) {
 
 Command.prototype.exec = function exec(args, index, delegate) {
     delegate = delegate || new Delegate();
+    if (!args) {
+        args = process.argv;
+        index = 2;
+    }
     var config = this.parse(args, index);
     if (config === null) {
+        console.error('usage: ' + this._name);
+        for (var index = 0; index < this._usage.length; index++) {
+            console.log('  ' + this._usage[index]);
+        }
         return delegate.end();
     }
     return config;
