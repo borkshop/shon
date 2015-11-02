@@ -63,7 +63,7 @@ var command = new Command('troll\n' +
     'Answer me these questions three, ere the other side ye see.', {
     name: '[-n|--name] <name> What is your name?',
     color: '[-c|--color] <color> What is your favorite colour?',
-    airspeed: '[-a|--airspeed] <airspeed> :number What is the average ' +
+    airspeed: '[-a|--airspeed] <airspeed> :quantity What is the average ' +
         'airspeed velocity of an unladen swallow?'
 });
 
@@ -126,7 +126,7 @@ The sum command accepts any number of arguments and computes their sum.
 
 ```js
 var Command = require('shon');
-var command = new Command('sum Computes the sum of multiple numbers', {
+var command = new Command('sum computes the sum of multiple numbers', {
     numbers: '<number>... :number'
 });
 var config = command.exec();
@@ -197,8 +197,9 @@ The selected command gets captured as a `{name, config}` object.
 
 var Command = require('..');
 
-var command = new Command('db A simple key-value store', {
-    command: {
+var command = new Command('db\n' +
+    'A simple key-value store', {
+    action: {
         get: {
             key: '<key>'
         },
@@ -208,6 +209,7 @@ var command = new Command('db A simple key-value store', {
         },
         rm: {
             key: '<key>',
+            force: '[-f|--force]'
         },
         ls: {
         }
@@ -215,11 +217,11 @@ var command = new Command('db A simple key-value store', {
 });
 
 var config = command.exec();
-var subconfig = config.command.config;
+var subconfig = config.action.config;
 
 var store = {a: 10, b: 20, c: 30};
 
-switch (config.command.name) {
+switch (config.action.name) {
     case 'ls':
         console.log(Object.keys(store));
         break;
@@ -246,7 +248,7 @@ $ db rm a
 
 ## Usage Grammar
 
-The [usage.pegs][grammar] for parsing usage has the following semantics:
+The [grammar](usage.pegs) for parsing usage has the following semantics:
 
 Each term may have some combination of flags and an argument.
 Flags and arguments combine in various ways:

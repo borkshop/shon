@@ -2,8 +2,9 @@
 
 var Command = require('..');
 
-var command = new Command('db A simple key-value store', {
-    command: {
+var command = new Command('db\n' +
+    'A simple key-value store', {
+    action: {
         get: {
             key: '<key>'
         },
@@ -21,11 +22,11 @@ var command = new Command('db A simple key-value store', {
 });
 
 var config = command.exec();
-var subconfig = config.command.config;
+var subconfig = config.action.config;
 
 var store = {a: 10, b: 20, c: 30};
 
-switch (config.command.name) {
+switch (config.action.name) {
     case 'ls':
         console.log(Object.keys(store));
         break;
