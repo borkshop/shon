@@ -59,9 +59,8 @@ function subcommand(name, commands) {
         commands: choices,
         collectorType: null,
         validatorType: 'options',
-        required: null,
+        required: true,
         help: null,
-        default: null
     };
 }
 
@@ -154,8 +153,8 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             parser.flags[flag.flag] = termParser;
         }
 
-        // if there are no flags, this is purely an argument
-        if (term.flags.length === 0) {
+        // if there are no flags or if the flags are optional, this can be purely an argument
+        if (term.flags.length === 0 || term.optionalFlag) {
             var termParser = setupTermParser(term, null, def, converter, validator, collector, delegate);
             if (delegate.exitCode !== 0) {
                 return;

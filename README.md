@@ -8,7 +8,6 @@ all missing or invalid configuration values.
 Argz supports both optional and required flags and arguments, as well as
 subcommands.
 
-
 ## Installation
 
 ```
@@ -48,17 +47,18 @@ dwim -b -b
 
 ## Troll
 
-The Bridge Troll accepts three required arguments as flags.
+The Bridge Troll accepts three required arguments.
+They can be taken by position, or in any order with flags.
 The last argument is a number, so the `:quantity` type annotation ensures that
 the value on the command line is converted to a number and is a valid, positive
 number. The `:number` annotation merely validates that the value is a number.
 
 ```js
-var command = new Command('troll ' +
+var command = new Command('troll\n' +
     'Answer me these questions three, ere the other side ye see.', {
-    name: '-n|--name <name> What is your name?',
-    color: '-c|--color <color> What is your favorite colour?',
-    airspeed: '-a|--airspeed <airspeed> :quantity What is the average ' +
+    name: '[-n|--name] <name> What is your name?',
+    color: '[-c|--color] <color> What is your favorite colour?',
+    airspeed: '[-a|--airspeed] <airspeed> :number What is the average ' +
         'airspeed velocity of an unladen swallow?'
 });
 
@@ -69,10 +69,15 @@ console.log('Color:', config.color);
 console.log('Airpseed:', config.airspeed);
 ```
 
+The square brackets around the flags denote that the flag is optional but the
+argument is not.
+
 ## Cut
 
 The cut command accepts two optional arguments with custom default values, a
 custom converter, and a custom validator.
+The square brackets around the flag and argument denote that the argument is
+optional and must be specified with the flag.
 
 ```js
 'use strict';
@@ -233,6 +238,129 @@ $ db get a
 10
 $ db rm a
 ```
+
+## Usage Grammar
+
+The [usage.pegs][grammar] for parsing usage has the following semantics:
+
+Each term may have some combination of flags and an argument.
+Flags and arguments combine in various ways:
+
+-   `[-f|--flag]`
+    An optional flag.
+    Each flag may specify a value, like `-a=alpha|-b=beta`.
+    If none of the flags specify a value, the variable will be a boolean,
+    false by default, and switched to true by the presence of any of the flags.
+-   `[-f|--flag] <argument>`
+    A required argument, optionally specified with a flag.
+    So, if a command accepts multiple arguments, they will be taken from the
+    command line in order, but can be specified in any order using flags.
+-   `[-f|--flag <argument>]`
+    An optional flag with an argument.
+    The argument can only be specified with the flag.
+- `-f|--flag <argument>`
+    A required flag with an argument.
+    The argument can only be specified with the flag.
+- `<argument>`
+    A required argument.
+    The argument must appear in the declared order on the command line.
+
+Future versions of this library intend to add support for other idioms,
+including the `-v/-q` idiom for upgrading or downgrading verbosity.
+
+By default, an argument will set a single configuration value.
+However, with a collector annotation, each argument may append a value onto an array.
+
+-   `<argument>...`
+    An argument that may be specified any number of times.
+    The configuration value will be an array, empty by default.
+-   `<argument>{count}`
+    The argument must be specified exactly `count` times.
+-   `<argument>{min..}`
+    The argument must be specified at least `min` times.
+-   `<argument>{min..max}`
+    The argument must be specified at least `min` times and no more than `max` times.
+
+Each term may be followed by a type annotation.
+
+-   `:boolean` means that the argument must either be the string `true` or the
+    string `false`, with the corresponding boolean values.
+-   `:number` means that the argument must represent a number, not NaN.
+-   `:quantity` means that the argument must represent a positive integer.
+
+Future versions of this library will introduce further type annotations for
+reading and writing by file name or `-`.
+
+## Usage Model
+
+The command usage model is designed with the intent that other libraries will
+provide a higher level interface that produce it (like a tool that
+automatically abbreviates and creates negative flags), and other utilities that
+will consume it (like a tool that provides shell completion).
+
+The `Command` constructor generates a command model object, suitable for
+passing to `exec`, `parse`, or `usage` functions, or a variety of other
+possible uses.
+These functions require an object with the following shape:
+
+-   ``_name`` the name of the command.
+-   ``_terms`` is an array of terms.
+    Each term corresponds to a configuration variable and describes all of the
+    argument forms necessary to populate it.
+
+The `Command` constructor also reveals each term by its name to make it easier
+to programmatically manipulate each term after the skeleton has been generated.
+
+Each term has the following shape:
+
+-   `name` the name of the corresponding configuration variable.
+-   `flags` an array of flags.
+-   `arg` the name of the term's argument or `null` if it does not accept one.
+-   `commands` an object mapping subcommand names to command shapes, or `null`
+    if not applicable.
+-   `collectorType` is `array` for arrays of any size or `null` if the term
+    collects a single value.
+    A future version may introduce a `difference` collector for upgrading or
+    downgrading a value.
+-   `converterType` is one of `boolean`, `number`, or null.
+-   `validatorType` is one of `number`, `positive`, or null.
+-   `converter` is an optional converter object or function.
+-   `validator` is an optional validator object or function.
+-   `required` implies that this term must be specified on the command line.
+-   `optionalFlag` implies that this term's argument can be specified either in
+    order or earlier if specified with its flag.
+-   `minLength` if the term is an array, the minimum length, albeit 0
+-   `maxLength` if the term is an array, the maximum length, albeit Infinity
+
+A flag has the following shape:
+
+-   `flag` is the full text of the flag including the `-` or `--` prefix.
+-   `long` is `true` if the prefix is `--`
+-   `short` is `true` if the prefix is `-`
+-   `value` is the string representation of the value that this flag will set.
+    It will be converted and validated based on the term's type.
+-   `default` is `true` if the flag produces the default value.
+
+Converter objects implement a `convert` method. Convert functions accept a
+string from the command line and return the corresponding JavaScript value.
+They also receive an `iterator` and `delegate` object which can be used
+to report errors and halt the parser.
+
+```js
+function convertBoolean(string, iterator, delegate) {
+    if (string === 'true') {
+        return true;
+    } else if (string === 'false') {
+        return false;
+    } else {
+        delegate.error('Must be true or false');
+        delegate.cursor(iterator.cursor);
+    }
+}
+```
+
+Validator objects implement a `validate` method. Validate functions accept a
+value and return whether it is valid.
 
 ---
 

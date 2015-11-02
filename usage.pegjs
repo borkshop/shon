@@ -1,22 +1,58 @@
-// [... -s|--long <arg>] Help
+
+// [-s|--long <arg>...] :type Help
+// [-s|--long] <arg>... :type Help
+// -s|--long <arg>... :type Help
+
+// [ -s|--long ]
+// [ -s|--long ] arg
+// [ -s|--long arg ]
+// [ arg ]
+// -s|--long
+// -s|--long arg
+// arg
 
 start = term:(optional / required) type:type help:help {
-        term.help = help;
         term.validatorType = type.validator;
         term.converterType = type.converter;
+        term.help = help;
         return term;
     }
 
-optional = '[' _ term:required ']' _ {
-        term.required = false;
+optional = '[' _ tail:optional_tail { return tail; }
+
+optional_tail = flags:flags ']' _ arg:arg tail:tail {
+        tail.flags = flags;
+        tail.arg = arg.name;
+        tail.optionalFlag = true;
+        return tail;
+    } / flags:flags arg:arg tail:tail ']' _ {
+        tail.flags = flags;
+        tail.arg = arg.name;
+        tail.required = false;
+        return tail;
+    } / flags:flags tail:tail ']' _ {
+        tail.flags = flags;
+        tail.required = false;
+        return tail;
+    }
+
+required = flags:flags term:required_tail {
+        term.flags = flags;
         return term;
     }
 
-required = flags:flags arg:arg collector:collector {
+required_tail = arg:arg tail:tail {
+        tail.arg = arg.name;
+        return tail;
+    } / tail:tail {
+        return tail;
+    }
+
+tail = collector:collector {
         return {
             name: null,
-            flags: flags,
-            arg: arg.name,
+            flags: null,
+            arg: null,
             command: null,
             collectorType: collector.type,
             validatorType: null,
@@ -99,8 +135,6 @@ name = $([A-Za-z_-]+)
 
 arg = '<' name:name '>' _ {
         return {name: name};
-    } / _ {
-        return {name: null};
     }
 
 type = ':quantity' _ {

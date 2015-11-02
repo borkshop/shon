@@ -1,14 +1,14 @@
 'use strict';
 
 var test = require('tape');
-var parse = require('../usage');
+var usage = require('../usage');
 
 function cases(tests) {
     return function t(assert) {
 
         for (var index = 0; index < tests.length; index++) {
             var test = tests[index];
-            var result = parse(test.usage);
+            var result = usage.parse(test.usage);
             if (result.err) {
                 assert.ifError(result.err);
                 continue;
@@ -35,8 +35,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -53,8 +52,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -71,8 +69,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -89,8 +86,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -107,8 +103,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -125,8 +120,7 @@ test('positive cases', cases([
             validatorType: null,
             required: false, // optional
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -143,8 +137,25 @@ test('positive cases', cases([
             validatorType: null,
             required: false, // optional
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
+        }
+    },
+
+    {
+        usage: '[-f|--flag] <arg>',
+        parsed: {
+            name: null,
+            flags: [{flag: '-f', short: true}, {flag: '--flag', long: true}],
+            arg: 'arg',
+            command: null,
+            help: '',
+            collectorType: null,
+            converterType: null,
+            validatorType: null,
+            required: true,
+            optionalFlag: true,
+            minLength: null,
+            maxLength: null
         }
     },
 
@@ -161,8 +172,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -179,8 +189,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -196,9 +205,8 @@ test('positive cases', cases([
             converterType: null,
             validatorType: null,
             required: true,
-            minLength: null,
-            maxLength: null,
-            default: null
+            minLength: 0,
+            maxLength: Infinity
         }
     },
 
@@ -214,9 +222,8 @@ test('positive cases', cases([
             converterType: null,
             validatorType: null,
             required: true,
-            minLength: null,
-            maxLength: null,
-            default: null
+            minLength: 0,
+            maxLength: Infinity
         }
     },
 
@@ -233,8 +240,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: 2,
-            maxLength: 3,
-            default: null
+            maxLength: 3
         }
     },
 
@@ -251,8 +257,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: 2,
-            maxLength: null,
-            default: null
+            maxLength: Infinity
         }
     },
 
@@ -269,8 +274,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: 4,
-            maxLength: 4,
-            default: null
+            maxLength: 4
         }
     },
 
@@ -287,8 +291,7 @@ test('positive cases', cases([
             validatorType: 'positive',
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -308,8 +311,7 @@ test('positive cases', cases([
             validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -326,11 +328,10 @@ test('positive cases', cases([
             help: '',
             collectorType: null,
             converterType: 'boolean',
-            validatorType: 'boolean',
+            validatorType: null,
             required: true,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     },
 
@@ -350,8 +351,7 @@ test('positive cases', cases([
             validatorType: null,
             required: false,
             minLength: null,
-            maxLength: null,
-            default: null
+            maxLength: null
         }
     }
 
