@@ -24,10 +24,10 @@ A boolean flag is an option that switches a config value from false to true.
 ```js
 var Command = require('shon');
 var command = new Command('dwim', {
-    bool: '-b|--bool A boolean flag'
+    bool: '[-b|--bool] A boolean flag'
 });
 
-var config = command.exec(process.argv, 2);
+var config = command.exec();
 console.log(config.bool);
 ```
 
@@ -46,6 +46,8 @@ $ dwim -bb
 Redundant: bool
 dwim -b -b
         ^
+usage: dwim
+  [-b|--bool] A boolean flag
 ```
 
 ## Troll
