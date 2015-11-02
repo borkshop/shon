@@ -4,4 +4,5 @@
 require('./iterator');
 require('./parser');
 require('./command');
+require('./usage');
 require('./shon');

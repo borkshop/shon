@@ -2,6 +2,7 @@ instrumentation:
     include-all-sources: true
     excludes:
         - delegate.js
+        - demos/*.js
 check:
     global:
         statements: 100
