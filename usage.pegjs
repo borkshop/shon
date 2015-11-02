@@ -143,6 +143,8 @@ type = ':quantity' _ {
         return {converter: 'number', validator: 'number'};
     } / ':boolean' _ {
         return {converter: 'boolean', validator: null};
+    } / ':shon' _ {
+        return {converter: 'shon', validator: null};
     } / _ {
         return {converter: null, validator: null};
     }

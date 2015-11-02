@@ -21,6 +21,9 @@
   },
   "homepage": "https://github.com/kriskowal/argz#readme",
   "main": "./command.js",
+  "bin": {
+    "shon": "bin/shon.js"
+  },
   "devDependencies": {
     "faucet": "0.0.1",
     "istanbul": "^0.3.21",

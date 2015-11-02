@@ -287,6 +287,8 @@ Each term may be followed by a type annotation.
     string `false`, with the corresponding boolean values.
 -   `:number` means that the argument must represent a number, not NaN.
 -   `:quantity` means that the argument must represent a positive integer.
+-   `:shon` means that the value of the argument must be expressed with SHON
+    (shell object notation), described hereafter.
 
 Future versions of this library will introduce further type annotations for
 reading and writing by file name or `-`.
@@ -361,6 +363,43 @@ function convertBoolean(string, iterator, delegate) {
 
 Validator objects implement a `validate` method. Validate functions accept a
 value and return whether it is valid.
+
+## SHON Shell Object Notation
+
+SHON is an idiomatic notation for expressing objects at the command line.
+All of JSON can be expressed with SHON.
+SHON lends itself better to command line usage for the purposes of
+interpolating variables and tab completion.
+Any parser can accept SHON with the `:shon` type annotation.
+
+Type          | JSON                 | SHON
+------------- | -------------------- | ---------------------
+Object        | `{"hello": "World"}` | `[ --hello World ]`
+Array         | `["beep", "boop"]`   | `[ beep boop ]`
+Array         | `[1, 2, 3]`          | `[ 1 2 3 ]`
+Empty Array   | `[]`                 | `[ ]` or `[]`
+Object        | `{"a": 10, b: 20}`   | `[ --a 10 --b 20 ]`
+Empty Object  | `{}`                 | `[--]`
+Number        | `1`                  | `1`
+Number        | `-1`                 | `-1`
+Number        | `1e3`                | `1e3`
+String        | `"hello"`            | `hello`
+String        | `"hello world"`      | `'hello world'`
+String        | `"10"`               | `-- 10`
+String        | `"-10"`              | `-- -10`
+String        | `"-"`                | `-- -`
+String        | `"--"`               | `-- --`
+True          | `true`               | `-t`
+False         | `false`              | `-f`
+Null          | `null`               | `-n`
+
+SHON subexpressions can be interpolated with a bare `$SHON` variable.
+The proper idiom for interpolating an arbitrary string in SHON is `--
+"$VARIABLE"`.
+This ensures that the variable is interpreted as a string literal in place.
+
+This package ships with a `shon` command for converting SHON to JSON at the
+command line.
 
 ---
 

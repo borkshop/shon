@@ -12,6 +12,7 @@ var Converter = require('./converter');
 var Validator = require('./validator');
 var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
+var ShonParser = require('./shon-parser');
 var CommandParser = require('./command-parser');
 
 var usage = require('./usage');
@@ -238,6 +239,8 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
         }
 
         return new FlagParser(value, collector);
+    } else if (term.converterType === 'shon') {
+        return new ShonParser(term.arg, collector);
     } else {
         return new ValueParser(term.arg, converter, validator, collector);
     }
