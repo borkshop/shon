@@ -131,7 +131,7 @@ short = flag:$('-' name) {
         return {flag: flag, short: true};
     }
 
-name = $([A-Za-z_-]+)
+name = $([A-Za-z0-9_-]+)
 
 arg = '<' name:name '>' _ {
         return {name: name};
