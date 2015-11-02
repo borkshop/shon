@@ -2,7 +2,7 @@
   "name": "shon",
   "description": "A JavaScript command-line argument parser",
   "author": "Kris Kowal <kris@cixar.com>",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "directories": {
     "test": "test"
   },
