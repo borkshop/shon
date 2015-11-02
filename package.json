@@ -1,14 +1,14 @@
 {
-  "name": "argz",
+  "name": "shon",
   "description": "A JavaScript command-line argument parser",
   "author": "Kris Kowal <kris@cixar.com>",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "directories": {
     "test": "test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kriskowal/argz.git"
+    "url": "git+https://github.com/kriskowal/shon.git"
   },
   "keywords": [
     "argument",
@@ -17,9 +17,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kriskowal/argz/issues"
+    "url": "https://github.com/kriskowal/shon/issues"
   },
-  "homepage": "https://github.com/kriskowal/argz#readme",
+  "homepage": "https://github.com/kriskowal/shon#readme",
   "main": "./command.js",
   "bin": {
     "shon": "bin/shon.js"

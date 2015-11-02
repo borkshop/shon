@@ -1,17 +1,20 @@
 
-# argz
+# shon
 
-Argz is a JavaScript command-line argument parser.
+Shon is a JavaScript command-line argument parser.
 Fully describe your command's interface using familiar usage notation.
-Since the declarations are complete, Argz can provide informative errors for
+Since the declarations are complete, Shon can provide informative errors for
 all missing or invalid configuration values.
-Argz supports both optional and required flags and arguments, as well as
+Shon supports both optional and required flags and arguments, as well as
 subcommands.
+
+Shon also supports a recursive descent parser for Shell Object Notation (SHON),
+so complex objects can be expressed as command line arguments.
 
 ## Installation
 
 ```
-$ npm install --save argz
+$ npm install --save shon
 ```
 
 ## Common Boolean Flags
@@ -19,7 +22,7 @@ $ npm install --save argz
 A boolean flag is an option that switches a config value from false to true.
 
 ```js
-var Command = require('argz');
+var Command = require('shon');
 var command = new Command('dwim', {
     bool: '-b|--bool A boolean flag'
 });
@@ -82,7 +85,7 @@ optional and must be specified with the flag.
 ```js
 'use strict';
 
-var Command = require('argz');
+var Command = require('shon');
 
 var command = new Command('cut', {
     delim: '[-d <delim>]',
@@ -120,7 +123,7 @@ process.stdin.on('data', function (line) {
 The sum command accepts any number of arguments and computes their sum.
 
 ```js
-var Command = require('argz');
+var Command = require('shon');
 var command = new Command('sum Computes the sum of multiple numbers', {
     numbers: '<number>... :number'
 });
@@ -155,7 +158,7 @@ necessary to convert the flag values as strings to their corresponding boolean
 value.
 
 ```js
-var Command = require('argz');
+var Command = require('shon');
 var command = new Command('soup', {
     soup: '[--soup=true*|-s=true|--no-soup=false|-S=false] :boolean ' +
         'Whether to serve soup'
@@ -400,6 +403,14 @@ This ensures that the variable is interpreted as a string literal in place.
 
 This package ships with a `shon` command for converting SHON to JSON at the
 command line.
+
+## Acknowledgements
+
+This project is based on earlier work implemented for [NarwhalJS][] by Kris
+Kowal, Tom Robinson, and Abhinav Gupta.
+Abhinav is responsible for having contrived the brilliant name, SHON.
+
+[NarwhalJS]: https://github.com/280north/narwhal
 
 ---
 
