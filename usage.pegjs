@@ -11,10 +11,13 @@
 // -s|--long arg
 // arg
 
-start = term:(optional / required) type:type help:help {
+start = term:(optional / required) type:type trump:$('*' / '') help:help {
         term.validatorType = type.validator;
         term.converterType = type.converter;
         term.help = help;
+        if (trump === '*') {
+            term.trump = true;
+        }
         return term;
     }
 

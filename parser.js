@@ -13,6 +13,9 @@ Parser.prototype.parse = function parse(iterator, delegate) {
 
     for (var index = 0; index < this.args.length; index++) {
         this.parseFlags(iterator, delegate);
+        if (delegate.exitCode !== 0) {
+            break;
+        }
         this.args[index].parse(iterator, delegate);
         if (delegate.exitCode !== 0) {
             break;
@@ -21,6 +24,9 @@ Parser.prototype.parse = function parse(iterator, delegate) {
 
     // expect end of input unless tail
     this.parseFlags(iterator, delegate);
+    if (delegate.exitCode !== 0) {
+        return;
+    }
     if (!this.tail) {
         if (iterator.hasArgument()) {
             delegate.error('Unexpected argument: ' + JSON.stringify(iterator.shiftArgument()));
@@ -32,12 +38,15 @@ Parser.prototype.parse = function parse(iterator, delegate) {
     // parse tail arguments
     for (;;) {
         this.parseFlags(iterator, delegate);
+        if (delegate.exitCode !== 0) {
+            return;
+        }
         if (!iterator.hasArgument()) {
             break;
         }
         this.tail.parse(iterator, delegate);
         if (delegate.exitCode !== 0) {
-            break;
+            return;
         }
     }
 };

@@ -14,6 +14,7 @@ var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
 var ShonParser = require('./shon-parser');
 var CommandParser = require('./command-parser');
+var TrumpParser = require('./trump-parser');
 
 var usage = require('./usage');
 
@@ -71,7 +72,10 @@ Command.prototype.exec = function exec(args, index, delegate) {
         args = process.argv;
         index = 2;
     }
-    var config = this.parse(args, index);
+    var config = this.parse(args, index, delegate);
+    if (delegate.trumped) {
+        return delegate.trumped;
+    }
     if (config === null) {
         console.error('usage: ' + this._name);
         for (var index = 0; index < this._usage.length; index++) {
@@ -170,7 +174,9 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             }
         }
 
-        collectors.push(collector);
+        if (!term.trump) {
+            collectors.push(collector);
+        }
     }
 };
 
@@ -225,7 +231,9 @@ function setupConverter(term, isBoolean) {
 }
 
 function setupTermParser(term, flag, value, converter, validator, collector, delegate) {
-    if (term.commands) {
+    if (term.trump) {
+        return new TrumpParser(term.name, collector);
+    } else if (term.commands) {
         return new CommandParser(term.commands, collector);
     } else if (term.arg === null) {
         // Establish the value for flags
