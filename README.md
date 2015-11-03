@@ -187,6 +187,35 @@ It is unnecessary to specify the `:boolean` for flags that take no argument and
 do not specify their values: they are presumed to all set the config value to
 true.
 
+## Help Trumps All
+
+Idioms like ``[-h|--help]*`` and ``[-v|--version]*`` are special because they
+invalidate all other required arguments.
+The asterisk denotes "trump flags".
+If the parser encounters one of these trump flags, it will bypass all further
+validation and simply return the name of the config variable instead of the
+config object.
+
+This helpful command has a required argument, but if you provide `--help` on
+the command line, the parser overlooks the missing argument and returns "help"
+so you can provide an alternate behavior.
+
+```js
+var command = new Command('do', {
+    activity: '<activity>',
+    help: '[-h|--help]*'
+});
+
+var config = command.exec();
+
+if (config === 'help') {
+    command._logUsage();
+    return;
+}
+
+console.log('doing activity:', config.activity);
+```
+
 ## Subcommands
 
 Commands can have subcommands.
