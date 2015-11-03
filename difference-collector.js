@@ -9,6 +9,7 @@ function DifferenceCollector(name, value, min, max) {
 
 DifferenceCollector.prototype.collect = function collect(value) {
     this.value += value;
+    return true;
 };
 
 DifferenceCollector.prototype.capture = function capture(iterator, delegate) {

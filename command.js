@@ -96,12 +96,10 @@ Command.prototype.parse = function parse(args, index, delegate) {
 Command.prototype._parse = function parse(iterator, delegate) {
     var parser = new Parser();
     var collectors = [];
-    this._setup(parser, collectors, iterator, delegate);
-    if (delegate.isDone()) {
+    if (!this._setup(parser, collectors, iterator, delegate)) {
         return null;
     }
-    parser.parse(iterator, delegate);
-    if (delegate.isDone()) {
+    if (!parser.parse(iterator, delegate)) {
         return null;
     }
     return this._capture(collectors, iterator, delegate);
@@ -131,11 +129,11 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             if (flag.default) {
                 def = converter.convert(flag.value, iterator, delegate);
                 if (delegate.isDone()) {
-                    return;
+                    return false;
                 }
                 if (!validator.validate(def, iterator, delegate)) {
                     delegate.error('Invalid default: ' + def);
-                    return;
+                    return false;
                 }
                 break;
             }
@@ -153,7 +151,7 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             var flag = term.flags[findex];
             var termParser = setupTermParser(term, flag, def, converter, validator, collector, delegate);
             if (delegate.isDone()) {
-                return;
+                return false;
             }
             parser.flags[flag.flag] = termParser;
         }
@@ -162,7 +160,7 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
         if (term.flags.length === 0 || term.optionalFlag) {
             var termParser = setupTermParser(term, null, def, converter, validator, collector, delegate);
             if (delegate.isDone()) {
-                return;
+                return false;
             }
             if (term.collectorType === null) {
                 // assert parser.tail === null
@@ -178,6 +176,8 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             collectors.push(collector);
         }
     }
+
+    return true;
 };
 
 Command.prototype._capture = function capture(collectors, iterator, delegate) {

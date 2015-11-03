@@ -10,9 +10,9 @@ function ShonParser(name, collector) {
 ShonParser.prototype.parse = function parse(iterator, delegate) {
     var value = SHON.parseValue(iterator.cursor, delegate);
     if (delegate.isDone()) {
-        return null;
+        return false;
     }
-    this.collector.collect(value, iterator, delegate);
+    return this.collector.collect(value, iterator, delegate);
 };
 
 module.exports = ShonParser;

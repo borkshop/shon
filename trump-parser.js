@@ -7,6 +7,7 @@ function TrumpParser(value, collector) {
 
 TrumpParser.prototype.parse = function parse(iterator, delegate, flag) {
     delegate.trumped = this.value;
+    return false;
 };
 
 module.exports = TrumpParser;

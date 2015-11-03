@@ -12,16 +12,16 @@ CommandParser.prototype.parse = function parse(iterator, delegate) {
         if (!(command in this.commands)) {
             delegate.error('Unknown command: ' + command);
             delegate.cursor(iterator.cursor, -1);
-            return null;
+            return false;
         }
 
         var config = this.commands[command]._parse(iterator, delegate);
 
         if (config === null) {
-            return null;
+            return false;
         }
 
-        this.collector.collect({
+        return this.collector.collect({
             name: command,
             config: config
         });
@@ -30,7 +30,7 @@ CommandParser.prototype.parse = function parse(iterator, delegate) {
         delegate.error('Expected a command');
         delegate.cursor(iterator.cursor);
         // TODO one of
-        return null;
+        return false;
     }
 };
 

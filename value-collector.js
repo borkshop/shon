@@ -11,10 +11,11 @@ ValueCollector.prototype.collect = function collect(value, iterator, delegate) {
     if (this.collected) {
         delegate.warn('Redundant: ' + this.name);
         delegate.cursor(iterator.cursor);
-        return;
+        return true;
     }
     this.collected = true;
     this.value = value;
+    return true;
 };
 
 ValueCollector.prototype.capture = function capture(iterator, delegate) {

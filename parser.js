@@ -12,43 +12,41 @@ function Parser() {
 Parser.prototype.parse = function parse(iterator, delegate) {
 
     for (var index = 0; index < this.args.length; index++) {
-        this.parseFlags(iterator, delegate);
-        if (delegate.isDone()) {
-            break;
+        if (!this.parseFlags(iterator, delegate)) {
+            return false;
         }
-        this.args[index].parse(iterator, delegate);
-        if (delegate.isDone()) {
-            break;
+        if (!this.args[index].parse(iterator, delegate)) {
+            return false;
         }
     }
 
     // expect end of input unless tail
-    this.parseFlags(iterator, delegate);
-    if (delegate.isDone()) {
-        return;
+    if (!this.parseFlags(iterator, delegate)) {
+        return false;
     }
     if (!this.tail) {
         if (iterator.hasArgument()) {
             delegate.error('Unexpected argument: ' + JSON.stringify(iterator.shiftArgument()));
             delegate.cursor(iterator.cursor, -1);
+            return false;
         }
-        return;
+        return true;
     }
 
     // parse tail arguments
     for (;;) {
-        this.parseFlags(iterator, delegate);
-        if (delegate.isDone()) {
-            return;
+        if (!this.parseFlags(iterator, delegate)) {
+            return false;
         }
         if (!iterator.hasArgument()) {
             break;
         }
-        this.tail.parse(iterator, delegate);
-        if (delegate.isDone()) {
-            return;
+        if (!this.tail.parse(iterator, delegate)) {
+            return false;
         }
     }
+
+    return true;
 };
 
 Parser.prototype.parseFlags = function parseFlags(iterator, delegate) {
@@ -57,39 +55,55 @@ Parser.prototype.parseFlags = function parseFlags(iterator, delegate) {
         if (!iterator.hasFlag()) {
             break;
         }
-        this.parseFlag(iterator, delegate);
+        if (!this.parseFlag(iterator, delegate)) {
+            return false;
+        }
     }
+    return true;
 };
 
 Parser.prototype.parseFlag = function parseFlag(iterator, delegate) {
     var flag = iterator.shiftFlag();
     if (this.flags[flag]) {
-        this.flags[flag].parse(iterator, delegate);
+        if (!this.flags[flag].parse(iterator, delegate)) {
+            return false;
+        }
     } else if (flag.lastIndexOf('-', 0) === 0 && recognizeInteger(flag.slice(1))) {
         if (this.minus) {
             iterator.reserve = flag;
-            this.minus.parse(iterator, delegate);
+            if (!this.minus.parse(iterator, delegate)) {
+                return false;
+            }
         }
     } else if (flag.lastIndexOf('+', 0) === 0 && recognizeInteger(flag.slice(1))) {
         if (this.plus) {
             iterator.reserve = flag;
-            this.plus.parse(iterator, delegate);
+            if (!this.plus.parse(iterator, delegate)) {
+                return false;
+            }
         }
     } else {
         delegate.error('Unexpected flag: ' + JSON.stringify(flag));
         delegate.cursor(iterator.cursor);
+        return false;
     }
     if (iterator.reserve !== null && iterator.reserveFlag === null) {
         delegate.error('Unexpected argument for flag: ' + JSON.stringify(iterator.reserve));
         delegate.cursor(iterator.cursor);
         iterator.reserve = null;
+        return false;
     }
+
+    return true;
 };
 
 Parser.prototype.parseEscape = function parseEscape(iterator, delegate) {
     if (iterator.shiftEscape() && this.escape) {
-        this.escape.parse(iterator, delegate);
+        if (!this.escape.parse(iterator, delegate)) {
+            return false;
+        }
     }
+    return true;
 };
 
 function recognizeInteger(text) {
