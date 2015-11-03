@@ -97,11 +97,11 @@ Command.prototype._parse = function parse(iterator, delegate) {
     var parser = new Parser();
     var collectors = [];
     this._setup(parser, collectors, iterator, delegate);
-    if (delegate.exitCode) {
+    if (delegate.isDone()) {
         return null;
     }
     parser.parse(iterator, delegate);
-    if (delegate.exitCode) {
+    if (delegate.isDone()) {
         return null;
     }
     return this._capture(collectors, iterator, delegate);
@@ -130,7 +130,7 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
             var flag = term.flags[findex];
             if (flag.default) {
                 def = converter.convert(flag.value, iterator, delegate);
-                if (delegate.exitCode !== 0) {
+                if (delegate.isDone()) {
                     return;
                 }
                 if (!validator.validate(def, iterator, delegate)) {
@@ -152,7 +152,7 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
         for (var findex = 0; findex < term.flags.length; findex++) {
             var flag = term.flags[findex];
             var termParser = setupTermParser(term, flag, def, converter, validator, collector, delegate);
-            if (delegate.exitCode !== 0) {
+            if (delegate.isDone()) {
                 return;
             }
             parser.flags[flag.flag] = termParser;
@@ -161,7 +161,7 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
         // if there are no flags or if the flags are optional, this can be purely an argument
         if (term.flags.length === 0 || term.optionalFlag) {
             var termParser = setupTermParser(term, null, def, converter, validator, collector, delegate);
-            if (delegate.exitCode !== 0) {
+            if (delegate.isDone()) {
                 return;
             }
             if (term.collectorType === null) {
@@ -186,7 +186,7 @@ Command.prototype._capture = function capture(collectors, iterator, delegate) {
         var collector = collectors[index];
         context[collector.name] = collector.capture(iterator, delegate);
     }
-    if (delegate.exitCode) {
+    if (delegate.isDone()) {
         return null;
     }
     return context;

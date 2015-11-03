@@ -2,7 +2,12 @@
 
 function Delegate() {
     this.exitCode = 0;
+    this.trumped = null;
 }
+
+Delegate.prototype.isDone = function isDone() {
+    return this.exitCode !== 0 || this.trumped !== null;
+};
 
 Delegate.prototype.log = function log(message, cursor) {
     console.log(message);

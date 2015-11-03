@@ -13,18 +13,18 @@ Parser.prototype.parse = function parse(iterator, delegate) {
 
     for (var index = 0; index < this.args.length; index++) {
         this.parseFlags(iterator, delegate);
-        if (delegate.exitCode !== 0) {
+        if (delegate.isDone()) {
             break;
         }
         this.args[index].parse(iterator, delegate);
-        if (delegate.exitCode !== 0) {
+        if (delegate.isDone()) {
             break;
         }
     }
 
     // expect end of input unless tail
     this.parseFlags(iterator, delegate);
-    if (delegate.exitCode !== 0) {
+    if (delegate.isDone()) {
         return;
     }
     if (!this.tail) {
@@ -38,14 +38,14 @@ Parser.prototype.parse = function parse(iterator, delegate) {
     // parse tail arguments
     for (;;) {
         this.parseFlags(iterator, delegate);
-        if (delegate.exitCode !== 0) {
+        if (delegate.isDone()) {
             return;
         }
         if (!iterator.hasArgument()) {
             break;
         }
         this.tail.parse(iterator, delegate);
-        if (delegate.exitCode !== 0) {
+        if (delegate.isDone()) {
             return;
         }
     }

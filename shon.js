@@ -72,7 +72,7 @@ function parseRemainingArray(array, cursor, delegate) {
             return array;
         } else {
             var value = parseRemainingValue(arg, cursor, delegate);
-            if (delegate.exitCode !== 0) {
+            if (delegate.isDone()) {
                 return null;
             }
             array.push(value);
@@ -100,13 +100,13 @@ function parseRemainingObject(object, cursor, delegate) {
                 var key = arg.slice(2, index);
                 var value = arg.slice(index + 1);
                 value = parseRemainingValue(value, cursor, delegate);
-                if (delegate.exitCode !== 0) {
+                if (delegate.isDone()) {
                     return null;
                 }
             } else {
                 var key = arg.slice(2);
                 var value = parseValue(cursor, delegate);
-                if (delegate.exitCode !== 0) {
+                if (delegate.isDone()) {
                     return null;
                 }
             }

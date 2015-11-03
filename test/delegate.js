@@ -9,6 +9,7 @@ function Delegate(assert, expected) {
     this.expected = expected;
     this.index = 0;
     this.exitCode = 0;
+    this.trumped = null;
 }
 
 Delegate.case = function (args, expected) {
@@ -21,6 +22,10 @@ Delegate.case = function (args, expected) {
         delegate.end();
         assert.end();
     }
+};
+
+Delegate.prototype.isDone = function isDone() {
+    return this.exitCode !== 0 || this.trumped !== null;
 };
 
 Delegate.prototype.error = function error(message) {
