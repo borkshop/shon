@@ -77,13 +77,17 @@ Command.prototype.exec = function exec(args, index, delegate) {
         return delegate.trumped;
     }
     if (config === null) {
-        console.error('usage: ' + this._name);
-        for (var index = 0; index < this._usage.length; index++) {
-            console.log('  ' + this._usage[index]);
-        }
+        this._logUsage();
         return delegate.end();
     }
     return config;
+};
+
+Command.prototype._logUsage = function usage() {
+    console.error('usage: ' + this._name);
+    for (var index = 0; index < this._usage.length; index++) {
+        console.log('  ' + this._usage[index]);
+    }
 };
 
 Command.prototype.parse = function parse(args, index, delegate) {
