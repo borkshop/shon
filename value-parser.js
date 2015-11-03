@@ -27,6 +27,7 @@ ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
         delegate.cursor(iterator.cursor);
         return false;
     }
+    return true;
 };
 
 module.exports = ValueParser;

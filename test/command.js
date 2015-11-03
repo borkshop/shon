@@ -74,6 +74,20 @@ test('optional boolean flag', cases(new Command('dwim', {
 
 ]));
 
+test('optional argument', cases(new Command('dwim', {
+    arg: '[<arg>]'
+}), [
+
+    {
+        name: 'defaults when omitted',
+        args: [],
+        config: {
+            arg: null
+        }
+    }
+
+]));
+
 test('required boolean flag', cases(new Command('dwim', {
     bool: '-b|--bool'
 }), [

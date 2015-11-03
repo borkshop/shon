@@ -250,7 +250,7 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
     } else if (term.converterType === 'shon') {
         return new ShonParser(term.arg, collector);
     } else {
-        return new ValueParser(term.arg, converter, validator, collector);
+        return new ValueParser(term.arg, converter, validator, collector, !term.required);
     }
 }
 
