@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var shon = require('../shon');
+var ShonParser = require('../shon-parser');
 var Delegate = require('./delegate');
 var Cursor = require('../cursor');
 
@@ -17,7 +17,8 @@ function cases(cases) {
             }
             var delegate = new Delegate(assert, logs);
             var cursor = new Cursor(test.input);
-            var output = shon.parseValue(cursor, delegate);
+            var parser = new ShonParser(null, null, test.json);
+            var output = parser.parseValue(cursor, delegate);
             assert.deepEquals(output, test.output, 'output matches');
         }
         assert.end();
@@ -106,6 +107,30 @@ test('shon', cases([
         output: [[]]
     },
     {
+        input: ['[', '[', 'hello', 'world', ']', ']'],
+        output: [['hello', 'world']]
+    },
+    {
+        input: ['[', '[', '[--]', '[--]', ']', ']'],
+        output: [[{}, {}]]
+    },
+    {
+        input: ['[', '[', '--key', '10', ']', ']'],
+        output: [{key: 10}]
+    },
+    {
+        input: ['[', '[', '--key=10', ']', ']'],
+        output: [{key: 10}]
+    },
+    {
+        input: ['[', '[', '--key=-10', ']', ']'],
+        output: [{key: -10}]
+    },
+    {
+        input: ['[', '[', '--key=--', '--', ']', ']'],
+        output: [{key: '--'}]
+    },
+    {
         input: ['[--]'],
         output: {}
     },
@@ -178,5 +203,36 @@ test('shon', cases([
     {
         input: ['--'],
         error: 'Expected string'
-    }
+    },
+
+    {
+        input: ['{}'],
+        output: '{}',
+        json: false
+    },
+
+    {
+        input: ['{}'],
+        output: {},
+        json: true
+    },
+
+    {
+        input: ['--', '{}'],
+        output: '{}',
+        json: true
+    },
+
+    {
+        input: ['{"a": 10}'],
+        output: {a: 10},
+        json: true
+    },
+
+    {
+        input: ['{a: 10}'],
+        error: 'Unexpected token a',
+        json: true
+    },
+
 ]));

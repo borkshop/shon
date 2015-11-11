@@ -325,6 +325,9 @@ Each term may be followed by a type annotation.
 -   `:quantity` means that the argument must represent a positive integer.
 -   `:shon` means that the value of the argument must be expressed with SHON
     (shell object notation), described hereafter.
+-   `:jshon` means that the value of the argument must be expressed with JSON
+    or SHON with JSON possibly embedded in place of values.
+-   `:json` means that the value of the argument must be expressed with JSON.
 
 Future versions of this library will introduce further type annotations for
 reading and writing by file name or `-`.

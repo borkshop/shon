@@ -148,6 +148,10 @@ type = ':quantity' _ {
         return {converter: 'boolean', validator: null};
     } / ':shon' _ {
         return {converter: 'shon', validator: null};
+    } / ':json' _ {
+        return {converter: 'json', validator: null};
+    } / ':jshon' _ {
+        return {converter: 'jshon', validator: null};
     } / _ {
         return {converter: null, validator: null};
     }

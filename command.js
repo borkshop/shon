@@ -252,10 +252,14 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
 
         return new FlagParser(value, collector);
     } else if (term.converterType === 'shon') {
-        return new ShonParser(term.arg, collector);
-    } else {
-        return new ValueParser(term.arg, converter, validator, collector, !term.required);
+        return new ShonParser(term.arg, collector, false);
+    } else if (term.converterType === 'jshon') {
+        return new ShonParser(term.arg, collector, true);
+    } else if (term.converterType === 'json') {
+        converter = Converter.lift(convertJson);
     }
+
+    return new ValueParser(term.arg, converter, validator, collector, !term.required);
 }
 
 function isPositive(number) {
@@ -274,6 +278,16 @@ function convertBoolean(string, iterator, delegate) {
     } else {
         delegate.error('Must be true or false');
         delegate.cursor(iterator.cursor);
+    }
+}
+
+function convertJson(string, iterator, delegate) {
+    try {
+        return JSON.parse(string);
+    } catch (error) {
+        delegate.error(error.message);
+        delegate.cursor(iterator.cursor, -1);
+        return null;
     }
 }
 
