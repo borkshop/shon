@@ -111,13 +111,8 @@ function isNumber(number) {
 
 var config = command.exec();
 
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', function (line) {
-    var parts = line.trim().split(config.delim);
-    console.log(config.fields.map(function get(field) {
-        return parts[field - 1];
-    }).join(config.delim));
-});
+// using config.delim and config.fields...
+// see demos/cut.js
 ```
 
 ## Sum
