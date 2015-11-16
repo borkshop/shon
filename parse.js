@@ -209,9 +209,9 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
 
         return new FlagParser(value, collector);
     } else if (term.converterType === 'shon') {
-        return new ShonParser(term.arg, collector, false);
+        return new ShonParser(term.arg, collector, !term.required, false);
     } else if (term.converterType === 'jshon') {
-        return new ShonParser(term.arg, collector, true);
+        return new ShonParser(term.arg, collector, !term.required, true);
     } else if (term.converterType === 'json') {
         converter = Converter.lift(convertJson);
     }

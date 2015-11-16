@@ -1,27 +1,35 @@
 'use strict';
 
-function ShonParser(name, collector, json) {
+function ShonParser(name, collector, optional, json) {
     this.name = name;
     this.collector = collector;
+    this.optional = optional;
     this.json = json;
 }
 
 ShonParser.prototype.parse = function parse(iterator, delegate) {
-    var value = this.parseValue(iterator.cursor, delegate);
-    if (delegate.isDone()) {
-        return false;
+    if (this.collector.collected) {
+        return true;
+    }
+    var value = this.parseValue(iterator.cursor, delegate, true);
+    if (delegate.isDone() || value === null) {
+        return true;
     }
     return this.collector.collect(value, iterator, delegate);
 };
 
-ShonParser.prototype.parseValue = function parseValue(cursor, delegate) {
-    if (cursor.done()) {
-        delegate.error('Expected value');
-        delegate.cursor(cursor);
+ShonParser.prototype.parseValue = function parseValue(cursor, delegate, root) {
+    if (this.collector.collected) {
         return null;
     }
-    var arg = cursor.shift();
-    return this.parseRemainingValue(arg, cursor, delegate);
+    if (!cursor.done()) {
+        var arg = cursor.shift();
+        return this.parseRemainingValue(arg, cursor, delegate);
+    } else if (!this.optional || !root) {
+        delegate.error('Expected value');
+        delegate.cursor(cursor);
+    }
+    return null;
 };
 
 ShonParser.prototype.parseRemainingValue = function parseRemainingValue(arg, cursor, delegate) {

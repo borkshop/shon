@@ -4,6 +4,7 @@ var test = require('tape');
 var ShonParser = require('../shon-parser');
 var Delegate = require('./delegate');
 var Cursor = require('../cursor');
+var ValueCollector = require('../value-collector');
 
 function cases(cases) {
     return function t(assert) {
@@ -17,7 +18,8 @@ function cases(cases) {
             }
             var delegate = new Delegate(assert, logs);
             var cursor = new Cursor(test.input);
-            var parser = new ShonParser(null, null, test.json);
+            var collector = new ValueCollector(null, null, true);
+            var parser = new ShonParser(null, collector, true, test.json);
             var output = parser.parseValue(cursor, delegate);
             assert.deepEquals(output, test.output, 'output matches');
         }
