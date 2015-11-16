@@ -1,7 +1,10 @@
 'use strict';
 
 var test = require('tape');
+var Cursor = require('../cursor');
+var Iterator = require('../iterator');
 var Command = require('../command');
+var parse = require('../parse');
 var Delegate = require('./delegate');
 
 function cases(command, cases) {
@@ -10,7 +13,9 @@ function cases(command, cases) {
             var c = cases[index];
             assert.comment(c.name);
             var delegate = new Delegate(assert, c.logs || {});
-            var config = command.parse(c.args, 0, delegate);
+            var cursor = new Cursor(c.args, 0);
+            var iterator = new Iterator(cursor);
+            var config = parse(command, iterator, delegate);
             assert.deepEquals(config, c.config, c.name);
             delegate.end();
         }
@@ -577,7 +582,7 @@ var defaultPositional = new Command('nom', {
 defaultPositional.first.default = 10;
 defaultPositional.second.default = 20;
 
-test('positional arguments may have defaults', cases(defaultPositional, [
+var defaultPositionalCases = [
 
     {
         name: 'defaults both',
@@ -606,4 +611,9 @@ test('positional arguments may have defaults', cases(defaultPositional, [
         }
     }
 
-]));
+];
+
+var reincarnate = JSON.parse(JSON.stringify(defaultPositional));
+
+test('positional arguments may have defaults', cases(defaultPositional, defaultPositionalCases));
+test('round trips command description through JSON', cases(reincarnate, defaultPositionalCases));
