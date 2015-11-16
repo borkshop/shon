@@ -87,7 +87,6 @@ test('optional argument', cases(new Command('dwim', {
         name: 'defaults when omitted',
         args: [],
         config: {
-            arg: null
         }
     }
 
@@ -138,7 +137,6 @@ test('command with optional single value flag', cases(new Command('dwim', {
         name: 'elided',
         args: [],
         config: {
-            key: null
         }
     },
 

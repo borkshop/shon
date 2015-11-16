@@ -28,6 +28,7 @@ ShonParser.prototype.parseValue = function parseValue(cursor, delegate, root) {
     } else if (!this.optional || !root) {
         delegate.error('Expected value');
         delegate.cursor(cursor);
+        return null;
     }
     return null;
 };

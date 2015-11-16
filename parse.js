@@ -39,18 +39,13 @@ function setup(command, parser, collectors, iterator, delegate) {
         // scan for whether any flag has a specified value
         var def = term.default;
 
-        // coerce undefined to null default
-        if (def === undefined) {
-            def = null;
-        }
-
         // terms with a default value are not required
-        if (def !== null) {
+        if (def != null) {
             term.required = false;
         }
 
         // a flag is boolean
-        var isBoolean = term.arg === null;
+        var isBoolean = term.arg == null;
         for (var findex = 0; findex < term.flags.length && isBoolean; findex++) {
             var flag = term.flags[findex];
             if (flag.value != null) {
@@ -78,7 +73,7 @@ function setup(command, parser, collectors, iterator, delegate) {
         }
 
         // boolean flags are false by default, unless otherwise specified
-        if (def === null && term.arg === null) {
+        if (def == null && term.arg == null) {
             def = false;
         }
 
@@ -123,10 +118,10 @@ function setup(command, parser, collectors, iterator, delegate) {
             if (delegate.isDone()) {
                 return false;
             }
-            if (term.collectorType === null) {
-                // assert parser.tail === null
+            if (term.collectorType == null) {
+                // assert parser.tail == null
                 parser.args.push(termParser);
-            } else if (parser.tail === null) {
+            } else if (parser.tail == null) {
                 parser.tail = termParser;
             } else {
                 // assert this cannot be
@@ -145,7 +140,10 @@ function capture(command, collectors, iterator, delegate) {
     var context = {};
     for (var index = 0; index < collectors.length; index++) {
         var collector = collectors[index];
-        context[collector.name] = collector.capture(iterator, delegate);
+        var value = collector.capture(iterator, delegate);
+        if (value != null) {
+            context[collector.name] = value;
+        }
     }
     if (delegate.isDone()) {
         return null;
@@ -196,7 +194,7 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
         return new TrumpParser(term.name, collector);
     } else if (term.commands) {
         return new CommandParser(term.commands, collector);
-    } else if (term.arg === null) {
+    } else if (term.arg == null) {
         // Establish the value for flags
         if (flag && flag.value != null) {
             value = converter.convert(flag.value);
@@ -265,7 +263,7 @@ CommandParser.prototype.parse = function _parse(iterator, delegate) {
 
         var config = parse(this.commands[command], iterator, delegate);
 
-        if (config === null) {
+        if (config == null) {
             return false;
         }
 
