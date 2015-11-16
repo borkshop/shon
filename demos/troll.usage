@@ -1,0 +1,10 @@
+usage: troll <name> <color> <airspeed>
+Answer me these questions three, ere the other side ye see.
+
+name: [-n|--name] <name>
+    What is your name?
+color: [-c|--color] <color>
+    What is your favorite color?
+airspeed: [-a|--airpseed] <airspeed> :number
+    What is the average airspeed velocity of an unladen swallow?
+help: [-h|--help]*

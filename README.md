@@ -275,6 +275,57 @@ $ db get a
 $ db rm a
 ```
 
+## Precompiled Usage
+
+The Command object provides a thin veneer, easily bypassed.
+You can precompile a command description or "usage file" to JSON and use that
+JSON blob directly.
+The following is a `troll.usage` file.
+
+```
+usage: troll <name> <color> <airspeed>
+Answer me these questions three, ere the other side ye see.
+
+name: [-n|--name] <name>
+    What is your name?
+color: [-c|--color] <color>
+    What is your favorite color?
+airspeed: [-a|--airpseed] <airspeed> :number
+    What is the average airspeed velocity of an unladen swallow?
+help: [-h|--help]*
+```
+
+Shon provides a command line tool called `usage2json` that converts files in
+this format to a JSON blob.
+
+```
+usage2json troll.usage > troll.json
+```
+
+You can use the generated JSON directly.
+This bypasses the usage parser entirely.
+
+```js
+'use strict';
+
+var exec = require('../exec');
+var logUsage = require('../log-usage');
+var command = require('./troll.json')
+var config = exec(command);
+
+if (config === 'help') {
+    return logUsage(command);
+}
+
+console.log('Name:', config.name);
+console.log('Color:', config.color);
+console.log('Airpseed:', config.airspeed);
+```
+
+This does, however, somewhat compromise the extensibility of the command
+description since the JSON blob does not index terms both by their position and
+name.
+
 ## Usage Grammar
 
 The [grammar](usage.pegs) for parsing usage has the following semantics:

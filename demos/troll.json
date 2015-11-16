@@ -1,0 +1,103 @@
+{
+  "name": "troll <name> <color> <airspeed>\nAnswer me these questions three, ere the other side ye see.\n",
+  "usage": [
+    "[-n|--name] <name>\n    What is your name?",
+    "[-c|--color] <color>\n    What is your favorite color?",
+    "[-a|--airpseed] <airspeed> :number\n    What is the average airspeed velocity of an unladen swallow?",
+    "[-h|--help]*\n"
+  ],
+  "terms": [
+    {
+      "name": "name",
+      "flags": [
+        {
+          "flag": "-n",
+          "short": true
+        },
+        {
+          "flag": "--name",
+          "long": true
+        }
+      ],
+      "arg": "name",
+      "command": null,
+      "collectorType": null,
+      "validatorType": null,
+      "converterType": null,
+      "required": true,
+      "minLength": null,
+      "maxLength": null,
+      "help": "What is your name?",
+      "optionalFlag": true
+    },
+    {
+      "name": "color",
+      "flags": [
+        {
+          "flag": "-c",
+          "short": true
+        },
+        {
+          "flag": "--color",
+          "long": true
+        }
+      ],
+      "arg": "color",
+      "command": null,
+      "collectorType": null,
+      "validatorType": null,
+      "converterType": null,
+      "required": true,
+      "minLength": null,
+      "maxLength": null,
+      "help": "What is your favorite color?",
+      "optionalFlag": true
+    },
+    {
+      "name": "airspeed",
+      "flags": [
+        {
+          "flag": "-a",
+          "short": true
+        },
+        {
+          "flag": "--airpseed",
+          "long": true
+        }
+      ],
+      "arg": "airspeed",
+      "command": null,
+      "collectorType": null,
+      "validatorType": "number",
+      "converterType": "number",
+      "required": true,
+      "minLength": null,
+      "maxLength": null,
+      "help": "What is the average airspeed velocity of an unladen swallow?",
+      "optionalFlag": true
+    },
+    {
+      "name": "help",
+      "flags": [
+        {
+          "flag": "-h",
+          "short": true
+        },
+        {
+          "flag": "--help",
+          "long": true
+        }
+      ],
+      "arg": null,
+      "command": null,
+      "collectorType": null,
+      "validatorType": null,
+      "converterType": null,
+      "required": false,
+      "minLength": null,
+      "maxLength": null,
+      "help": "",
+      "trump": true
+    }
+  ]
+}

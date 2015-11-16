@@ -28,9 +28,12 @@ function parse(command, iterator, delegate) {
 }
 
 function setup(command, parser, collectors, iterator, delegate) {
+    var terms = command._terms || command.terms;
 
-    for (var index = 0; index < command._terms.length; index++) {
-        var term = command._terms[index];
+    var names = Object.keys(terms);
+    for (var index = 0; index < names.length; index++) {
+        var name = names[index];
+        var term = terms[name];
 
         // scan for whether any flag has a specified value
         var def = term.default;

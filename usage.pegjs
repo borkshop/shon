@@ -11,10 +11,41 @@
 // -s|--long arg
 // arg
 
-start = term:(optional / required) type:type trump:$('*' / '') help:help {
+document = _ ('usage:' _)? name:$(nameline*) '\n'? document:termlines {
+        document.name = name;
+        return document;
+    }
+
+nameline = !'\n' !( name ':' ) [^\n]+ '\n'?
+
+termlines = terms:termline* {
+        var map = {};
+        var usage = [];
+        for (var index = 0; index < terms.length; index++) {
+            var term = terms[index];
+            usage.push(term.usage);
+            map[term.name] = term;
+            delete term.usage;
+            delete term.name;
+        }
+        return {name: null, usage: usage, terms: map};
+    }
+
+termline 'usage line' = _ name:name ':' _ term:usageline '\n'? {
+        term.name = name;
+        return term;
+    }
+
+line = term:usageline {
+        delete term.usage;
+        return term;
+    }
+
+usageline = term:(optional / required) type:type trump:$('*' / '') help:help {
         term.validatorType = type.validator;
         term.converterType = type.converter;
         term.help = help;
+        term.usage = text();
         if (trump === '*') {
             term.trump = true;
         }
@@ -156,7 +187,7 @@ type = ':quantity' _ {
         return {converter: null, validator: null};
     }
 
-help = help:$( ( _ ![\[ ] . )* ) _ {
+help = [ \n]* help:$( ( _ !( [\[ ] ) !( '\n' _ name ':' ) . )* ) _ {
         return help;
     }
 

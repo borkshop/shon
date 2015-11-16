@@ -18,14 +18,14 @@ function Command(name, terms) {
         throw new Error('Command(name, terms) terms must be an object');
     }
     this._name = name;
-    this._terms = [];
+    this._terms = {};
     this._usage = [];
     var names = Object.keys(terms);
     for (var index = 0; index < names.length; index++) {
         name = names[index];
         var term = terms[name];
         if (typeof term === 'object') {
-            this._terms.push(subcommand(name, term));
+            this._terms[name] = subcommand(name, term);
         } else if (typeof term === 'string') {
             var result = usage.parse(terms[name]);
             if (result.err) {
@@ -33,7 +33,7 @@ function Command(name, terms) {
             }
             this[name] = result.value;
             this[name].name = name;
-            this._terms.push(this[name]);
+            this._terms[name] = this[name];
             this._usage.push(term);
         }
     }
