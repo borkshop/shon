@@ -115,7 +115,19 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
         var term = this._terms[index];
 
         // scan for whether any flag has a specified value
-        var def = null;
+        var def = term.default;
+
+        // coerce undefined to null default
+        if (def === undefined) {
+            def = null;
+        }
+
+        // terms with a default value are not required
+        if (def !== null) {
+            term.required = false;
+        }
+
+        // a flag is boolean
         var isBoolean = term.arg === null;
         for (var findex = 0; findex < term.flags.length && isBoolean; findex++) {
             var flag = term.flags[findex];
@@ -153,16 +165,39 @@ Command.prototype._setup = function setup(parser, collectors, iterator, delegate
         // if there are flags, set up parsers for each flag
         for (var findex = 0; findex < term.flags.length; findex++) {
             var flag = term.flags[findex];
-            var termParser = setupTermParser(term, flag, def, converter, validator, collector, delegate);
+            var termParser = setupTermParser(
+                term,
+                flag,
+                def,
+                converter,
+                validator,
+                collector,
+                delegate
+            );
             if (delegate.isDone()) {
                 return false;
             }
             parser.flags[flag.flag] = termParser;
         }
 
-        // if there are no flags or if the flags are optional, this can be purely an argument
-        if (term.flags.length === 0 || term.optionalFlag) {
-            var termParser = setupTermParser(term, null, def, converter, validator, collector, delegate);
+        // if the term has no flags (like <arg>)
+        // or if the flags are optional (like [--flag] <arg>)
+        // or if the term is required and consumes an argument (unlike --flag)
+        // but (implicitly) not optional flags (like [--flag] or [--flag <arg>])
+        if (
+            term.flags.length === 0 ||
+            term.optionalFlag ||
+            (term.required && term.arg != null)
+        ) {
+            var termParser = setupTermParser(
+                term,
+                null,
+                def,
+                converter,
+                validator,
+                collector,
+                delegate
+            );
             if (delegate.isDone()) {
                 return false;
             }

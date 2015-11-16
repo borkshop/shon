@@ -180,7 +180,7 @@ test('command with required single value flag', cases(new Command('dwim', {
         args: [],
         config: null,
         logs: {
-            error0: 'Required: value'
+            error0: 'Expected: value'
         }
     }
 
@@ -569,3 +569,41 @@ test('command with flags subcommand and flags', cases(new Command('dwim', {
 
 ]));
 
+var defaultPositional = new Command('nom', {
+    first: '<first> :number',
+    second: '<second> :number'
+});
+
+defaultPositional.first.default = 10;
+defaultPositional.second.default = 20;
+
+test('positional arguments may have defaults', cases(defaultPositional, [
+
+    {
+        name: 'defaults both',
+        args: [],
+        config: {
+            first: 10,
+            second: 20
+        }
+    },
+
+    {
+        name: 'accepts first, defaults second',
+        args: ['0'],
+        config: {
+            first: 0,
+            second: 20
+        }
+    },
+
+    {
+        name: 'accepts both',
+        args: ['0', '1'],
+        config: {
+            first: 0,
+            second: 1
+        }
+    }
+
+]));
