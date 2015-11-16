@@ -1,0 +1,43 @@
+{
+  "name": "shon",
+  "description": [
+    "shon <object>",
+    "Converts SHell Object Notation (SHON) to",
+    "JavaScript Object Notation (JSON)"
+  ],
+  "usage": [
+    "<object> :shon",
+    "[-t <tab>] :quantity tab stops"
+  ],
+  "terms": {
+    "value": {
+      "flags": [],
+      "arg": "object",
+      "command": null,
+      "collectorType": null,
+      "validatorType": null,
+      "converterType": "shon",
+      "required": true,
+      "minLength": null,
+      "maxLength": null,
+      "help": ""
+    },
+    "tabs": {
+      "flags": [
+        {
+          "flag": "-t",
+          "short": true
+        }
+      ],
+      "arg": "tab",
+      "command": null,
+      "collectorType": null,
+      "validatorType": "positive",
+      "converterType": "number",
+      "required": false,
+      "minLength": null,
+      "maxLength": null,
+      "help": "tab stops"
+    }
+  }
+}

@@ -1,14 +1,17 @@
 {
-  "name": "troll <name> <color> <airspeed>\nAnswer me these questions three, ere the other side ye see.\n",
+  "name": "troll",
+  "description": [
+    "troll <name> <color> <airspeed>",
+    "Answer me these questions three, ere the other side ye see."
+  ],
   "usage": [
     "[-n|--name] <name>\n    What is your name?",
     "[-c|--color] <color>\n    What is your favorite color?",
     "[-a|--airpseed] <airspeed> :number\n    What is the average airspeed velocity of an unladen swallow?",
     "[-h|--help]*\n"
   ],
-  "terms": [
-    {
-      "name": "name",
+  "terms": {
+    "name": {
       "flags": [
         {
           "flag": "-n",
@@ -30,8 +33,7 @@
       "help": "What is your name?",
       "optionalFlag": true
     },
-    {
-      "name": "color",
+    "color": {
       "flags": [
         {
           "flag": "-c",
@@ -53,8 +55,7 @@
       "help": "What is your favorite color?",
       "optionalFlag": true
     },
-    {
-      "name": "airspeed",
+    "airspeed": {
       "flags": [
         {
           "flag": "-a",
@@ -76,8 +77,7 @@
       "help": "What is the average airspeed velocity of an unladen swallow?",
       "optionalFlag": true
     },
-    {
-      "name": "help",
+    "help": {
       "flags": [
         {
           "flag": "-h",
@@ -99,5 +99,5 @@
       "help": "",
       "trump": true
     }
-  ]
+  }
 }

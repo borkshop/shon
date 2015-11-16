@@ -11,12 +11,16 @@
 // -s|--long arg
 // arg
 
-document = _ ('usage:' _)? name:$(nameline*) '\n'? document:termlines {
+document = _ ('usage:' _)? name:name description:description* '\n'? document:termlines {
         document.name = name;
+        description[0] = name + description[0];
+        document.description = description;
         return document;
     }
 
-nameline = !'\n' !( name ':' ) [^\n]+ '\n'?
+description = !'\n' !( name ':' ) line:$([^\n]+) '\n'? {
+        return line;
+    }
 
 termlines = terms:termline* {
         var map = {};
@@ -28,7 +32,7 @@ termlines = terms:termline* {
             delete term.usage;
             delete term.name;
         }
-        return {name: null, usage: usage, terms: map};
+        return {name: null, description: null, usage: usage, terms: map};
     }
 
 termline 'usage line' = _ name:name ':' _ term:usageline '\n'? {
@@ -45,7 +49,7 @@ usageline = term:(optional / required) type:type trump:$('*' / '') help:help {
         term.validatorType = type.validator;
         term.converterType = type.converter;
         term.help = help;
-        term.usage = text();
+        term.usage = text().trim();
         if (trump === '*') {
             term.trump = true;
         }
@@ -187,7 +191,7 @@ type = ':quantity' _ {
         return {converter: null, validator: null};
     }
 
-help = [ \n]* help:$( ( _ !( [\[ ] ) !( '\n' _ name ':' ) . )* ) _ {
+help = [ \n]* help:$( ( [ \n]? !( [\[ ] ) !( _ name ':' ) [^\n] )* ) [ \n]* {
         return help;
     }
 

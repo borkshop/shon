@@ -34,6 +34,7 @@ function setup(command, parser, collectors, iterator, delegate) {
     for (var index = 0; index < names.length; index++) {
         var name = names[index];
         var term = terms[name];
+        term.name = term.name || name;
 
         // scan for whether any flag has a specified value
         var def = term.default;

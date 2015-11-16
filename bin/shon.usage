@@ -1,0 +1,6 @@
+shon <object>
+Converts SHell Object Notation (SHON) to
+JavaScript Object Notation (JSON)
+
+value: <object> :shon
+tabs: [-t <tab>] :quantity tab stops

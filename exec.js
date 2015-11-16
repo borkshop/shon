@@ -8,8 +8,9 @@ var logUsage = require('./log-usage');
 
 function exec(command, args, index, delegate) {
     if (!args) {
-        args = process.argv;
-        index = 2;
+        var name = command._name || command.name;
+        args = [name].concat(process.argv.slice(2));
+        index = 1;
     }
     var cursor = new Cursor(args, index);
     var iterator = new Iterator(cursor);
