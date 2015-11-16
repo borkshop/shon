@@ -28,16 +28,17 @@
     "faucet": "0.0.1",
     "istanbul": "^0.3.21",
     "opn-cli": "^1.0.0",
+    "pegjs": "^0.9.0",
     "tape": "^4.2.0"
   },
   "dependencies": {
     "camelcase": "^1.2.1",
-    "pegjs": "^0.9.0",
     "rezult": "^1.1.0"
   },
   "scripts": {
     "test": "node test",
     "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",
-    "view-cover": "opn coverage/index.html"
+    "view-cover": "opn coverage/index.html",
+    "build-parser": "pegjs --allowed-start-rules start usage.pegjs usage-parser.js"
   }
 }
