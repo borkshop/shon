@@ -2,6 +2,7 @@
 
 function ValueParser(args) {
     this.name = args.name;
+    this.arg = args.arg;
     this.converter = args.converter;
     this.validator = args.validator;
     this.collector = args.collector;
@@ -18,12 +19,12 @@ ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
         if (this.validator.validate(value, delegate)) {
             return this.collector.collect(value, iterator, delegate);
         } else {
-            delegate.error('Invalid: ' + this.name);
+            delegate.error('Invalid: ' + this.arg);
             delegate.cursor(iterator.cursor, -1);
             return false;
         }
     } else if (this.required) {
-        delegate.error('Expected: ' + this.name);
+        delegate.error('Expected: ' + this.arg);
         delegate.cursor(iterator.cursor);
         return false;
     }

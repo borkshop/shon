@@ -50,6 +50,7 @@ function subcommand(name, commands) {
         name: name,
         flags: [],
         arg: 'command',
+        type: 'command',
         commands: choices,
         collectorType: null,
         validatorType: 'options',

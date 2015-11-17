@@ -5,15 +5,12 @@ var Iterator = require('./iterator');
 var Delegate = require('./delegate');
 var Parser = require('./parser');
 var ValueCollector = require('./value-collector');
-var ArrayCollector = require('./array-collector');
-// TODO var DifferenceCollector = require('./difference-collector');
-// TODO SetCollector
 var Converter = require('./converter');
 var Validator = require('./validator');
 var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
-var ShonParser = require('./shon-parser');
 var TrumpParser = require('./trump-parser');
+var types = require('./types');
 
 function parse(command, iterator, delegate) {
     var parser = new Parser();
@@ -53,18 +50,22 @@ function setup(command, parser, collectors, iterator, delegate) {
             }
         }
 
-        var converter = setupConverter(term, isBoolean);
-        var validator = setupValidator(term);
+        if (isBoolean) {
+            term.type = 'boolean';
+        }
+
+        term.converter = Converter.lift(term.converter || types.converters[term.type]);
+        term.validator = Validator.lift(term.validator || types.validators[term.type]);
 
         // scan for a flag that has a default value
         for (var findex = 0; findex < term.flags.length; findex++) {
             var flag = term.flags[findex];
             if (flag.default) {
-                def = converter.convert(flag.value, iterator, delegate);
+                def = term.converter.convert(flag.value, iterator, delegate);
                 if (delegate.isDone()) {
                     return false;
                 }
-                if (!validator.validate(def, iterator, delegate)) {
+                if (!term.validator.validate(def, iterator, delegate)) {
                     delegate.error('Invalid default: ' + def);
                     return false;
                 }
@@ -77,20 +78,15 @@ function setup(command, parser, collectors, iterator, delegate) {
             def = false;
         }
 
-        var collector = setupCollector(term, def);
+        term.default = def;
+
+        var Collector = types.collectors[term.collectorType] || ValueCollector;
+        term.collector = new Collector(term);
 
         // if there are flags, set up parsers for each flag
         for (var findex = 0; findex < term.flags.length; findex++) {
             var flag = term.flags[findex];
-            var termParser = setupTermParser(
-                term,
-                flag,
-                def,
-                converter,
-                validator,
-                collector,
-                delegate
-            );
+            var termParser = setupTermParser(term, flag, iterator, delegate);
             if (delegate.isDone()) {
                 return false;
             }
@@ -106,15 +102,7 @@ function setup(command, parser, collectors, iterator, delegate) {
             term.optionalFlag ||
             (term.required && term.arg != null)
         ) {
-            var termParser = setupTermParser(
-                term,
-                null,
-                def,
-                converter,
-                validator,
-                collector,
-                delegate
-            );
+            var termParser = setupTermParser(term, null, iterator, delegate);
             if (delegate.isDone()) {
                 return false;
             }
@@ -129,12 +117,35 @@ function setup(command, parser, collectors, iterator, delegate) {
         }
 
         if (!term.trump) {
-            collectors.push(collector);
+            collectors.push(term.collector);
         }
     }
 
     return true;
 };
+
+function setupTermParser(term, flag, iterator, delegate) {
+    if (term.type === 'trump') {
+        return new TrumpParser(term);
+    } else if (term.type === 'command') {
+        return new CommandParser(term);
+    } else if (term.arg == null) {
+        var value = term.default;
+        // Establish the value for flags
+        if (flag && flag.value != null) {
+            value = term.converter.convert(flag.value, iterator, delegate);
+            if (!term.validator.validate(value)) {
+                delegate.error('Invalid flag value: ' + flag.value + ' for ' + term.name); // TODO
+            }
+        } else {
+            value = !value;
+        }
+        return new FlagParser({value: value, collector: term.collector});
+    }
+
+    var TermParser = term.parser || types.parsers[term.type] || ValueParser;
+    return new TermParser(term);
+}
 
 function capture(command, collectors, iterator, delegate) {
     var context = {};
@@ -150,101 +161,6 @@ function capture(command, collectors, iterator, delegate) {
     }
     return context;
 };
-
-function setupCollector(term, def) {
-    var collector;
-    if (term.collectorType === 'array') {
-        collector = new ArrayCollector({name: term.name, arg: term.arg, minLength: term.minLength, maxLength: term.maxLength});
-    } else {
-        collector = new ValueCollector({name: term.name, default: def, required: term.required});
-    }
-    return collector;
-}
-
-function setupValidator(term) {
-    var validator;
-    if (term.validator) {
-        validator = term.validator;
-    } else if (term.type === 'number') {
-        validator = isNumber;
-    } else if (term.type === 'quantity') {
-        validator = isPositive;
-    } else if (term.type === 'options') {
-        // TODO
-    } else if (term.validator) {
-        validator = term.validator;
-    }
-    return Validator.lift(validator);
-}
-
-function setupConverter(term, isBoolean) {
-    var converter;
-    if (term.converter) {
-        converter = term.converter;
-    } else if (isBoolean || term.type === 'boolean') {
-        converter = convertBoolean;
-    } else if (term.type === 'number' || term.type === 'quantity') {
-        converter = Number;
-    }
-    return Converter.lift(converter);
-}
-
-function setupTermParser(term, flag, value, converter, validator, collector, delegate) {
-    if (term.trump) {
-        return new TrumpParser({name: term.name, collector: collector});
-    } else if (term.commands) {
-        return new CommandParser({commands: term.commands, collector: collector});
-    } else if (term.arg == null) {
-        // Establish the value for flags
-        if (flag && flag.value != null) {
-            value = converter.convert(flag.value);
-            if (!validator.validate(value)) {
-                delegate.error('Invalid flag value: ' + flag.value + ' for ' + term.name); // TODO
-            }
-        } else {
-            value = !value;
-        }
-
-        return new FlagParser({value: value, collector: collector});
-    } else if (term.type === 'shon') {
-        return new ShonParser({name: term.arg, collector: collector, required: term.required, json: false});
-    } else if (term.type === 'jshon') {
-        return new ShonParser({name: term.arg, collector: collector, required: term.required, json: true});
-    } else if (term.type === 'json') {
-        converter = Converter.lift(convertJson);
-    }
-
-    return new ValueParser({name: term.arg, converter: converter, validator: validator, collector: collector, required: term.required});
-}
-
-function isPositive(number) {
-    return number === number && number >= 0;
-}
-
-function isNumber(number) {
-    return number === number;
-}
-
-function convertBoolean(string, iterator, delegate) {
-    if (string === 'true') {
-        return true;
-    } else if (string === 'false') {
-        return false;
-    } else {
-        delegate.error('Must be true or false');
-        delegate.cursor(iterator.cursor);
-    }
-}
-
-function convertJson(string, iterator, delegate) {
-    try {
-        return JSON.parse(string);
-    } catch (error) {
-        delegate.error(error.message);
-        delegate.cursor(iterator.cursor, -1);
-        return null;
-    }
-}
 
 function CommandParser(args) {
     this.commands = args.commands;

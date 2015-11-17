@@ -160,7 +160,7 @@ function setupValueParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
     var xCollector = new ValueCollector({name: 'x', required: false});
-    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
+    var xParser = new ValueParser({arg: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.flags['-x'] = xParser;
     parser.flags['--x'] = xParser;
     return xCollector;
@@ -226,7 +226,7 @@ function setupRequiredValueParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
     var xCollector = new ValueCollector({name: 'x', default: null, required: true});
-    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
+    var xParser = new ValueParser({arg: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.flags['-x'] = xParser;
     parser.flags['--x'] = xParser;
     return xCollector;
@@ -245,7 +245,7 @@ function setupRequiredArgumentParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
     var xCollector = new ValueCollector({name: 'x', default: null, required: true});
-    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
+    var xParser = new ValueParser({arg: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.args.push(xParser);
     return xCollector;
 }
@@ -264,9 +264,9 @@ function setupMultiArgumentParser(parser) {
     var xCollector = new ValueCollector({name: 'x', default: null, required: true});
     var yCollector = new ValueCollector({name: 'y', default: null, required: true});
     var zCollector = new ValueCollector({name: 'z', default: null, required: true});
-    var xParser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: xCollector, required: true});
-    var yParser = new ValueParser({name: 'y', converter: converter, validator: validator, collector: yCollector, required: true});
-    var zParser = new ValueParser({name: 'z', converter: converter, validator: validator, collector: zCollector, required: true});
+    var xParser = new ValueParser({arg: 'x', converter: converter, validator: validator, collector: xCollector, required: true});
+    var yParser = new ValueParser({arg: 'y', converter: converter, validator: validator, collector: yCollector, required: true});
+    var zParser = new ValueParser({arg: 'z', converter: converter, validator: validator, collector: zCollector, required: true});
     parser.args.push(xParser);
     parser.args.push(yParser);
     parser.args.push(zParser);
@@ -315,9 +315,9 @@ function setupArgumentsAndFlagsParsers(parser) {
     var xCollector = new ValueCollector({name: 'x', default: null, required: true});
     var yCollector = new ValueCollector({name: 'y', default: null, required: true});
     var zCollector = new ValueCollector({name: 'z', default: null, required: true});
-    var xParser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: xCollector, required: false});
-    var yParser = new ValueParser({name: 'y', converter: converter, validator: validator, collector: yCollector, required: false});
-    var zParser = new ValueParser({name: 'z', converter: converter, validator: validator, collector: zCollector, required: false});
+    var xParser = new ValueParser({arg: 'x', converter: converter, validator: validator, collector: xCollector, required: false});
+    var yParser = new ValueParser({arg: 'y', converter: converter, validator: validator, collector: yCollector, required: false});
+    var zParser = new ValueParser({arg: 'z', converter: converter, validator: validator, collector: zCollector, required: false});
     parser.args.push(xParser);
     parser.args.push(yParser);
     parser.args.push(zParser);
@@ -347,7 +347,7 @@ function setupConverterValidatorParser(commandParser) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(isEven);
     var collector = new ValueCollector({name: 'x', default: null, required: true});
-    var parser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: collector, required: false});
+    var parser = new ValueParser({arg: 'x', converter: converter, validator: validator, collector: collector, required: false});
     commandParser.args.push(parser);
     commandParser.flags['-x'] = parser;
     return collector;
@@ -399,7 +399,7 @@ function setupArrayCollectorParser(commandParser) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(isEven);
     var collector = new ArrayCollector({name: 'x', arg: 'x', minLength: 3, maxLength: 3});
-    var parser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: collector, required: false});
+    var parser = new ValueParser({arg: 'x', converter: converter, validator: validator, collector: collector, required: false});
     commandParser.tail = parser;
     commandParser.flags['-x'] = parser;
     return collector;
@@ -470,8 +470,8 @@ function setupDifferenceCollectorParser(parser, iterator) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(True);
     var collector = new DifferenceCollector({name: 'n', value: 5});
-    parser.plus = new ValueParser({name: 'n', converter: converter, validator: validator, collector: collector});
-    parser.minus = new ValueParser({name: 'n', converter: converter, validator: validator, collector: collector});
+    parser.plus = new ValueParser({arg: 'n', converter: converter, validator: validator, collector: collector});
+    parser.minus = new ValueParser({arg: 'n', converter: converter, validator: validator, collector: collector});
     return collector;
 }
 
@@ -538,7 +538,7 @@ function setupEscapedExpressionParser(parser) {
     var subParser = new Parser();
     parser.escape = subParser;
     var valueCollector = new ValueCollector({name: 'x', required: true});
-    var valueParser = new ValueParser({name: 'x', converter: new Converter(), validator: new Validator(), collector: valueCollector, required: true});
+    var valueParser = new ValueParser({arg: 'x', converter: new Converter(), validator: new Validator(), collector: valueCollector, required: true});
     subParser.args.push(valueParser);
     return valueCollector;
 }

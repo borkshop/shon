@@ -7,6 +7,8 @@ function ShonParser(args) {
     this.json = args.json;
 }
 
+ShonParser.prototype.json = false;
+
 ShonParser.prototype.parse = function parse(iterator, delegate) {
     if (this.collector.collected) {
         return true;

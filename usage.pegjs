@@ -45,13 +45,10 @@ line = term:usageline {
         return term;
     }
 
-usageline = term:(optional / required) type:type trump:$('*' / '') help:help {
+usageline = term:(optional / required) type:type help:help {
         term.type = type;
         term.help = help;
         term.usage = text().trim();
-        if (trump === '*') {
-            term.trump = true;
-        }
         return term;
     }
 
@@ -175,6 +172,8 @@ arg = '<' name:name '>' _ {
 
 type = ':' name:name _ {
         return name;
+    } / '*' _ {
+        return 'trump';
     } / _ {
         return null;
     }
