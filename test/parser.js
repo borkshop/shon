@@ -59,8 +59,8 @@ test('empty parser fails to recognize arg that looks like flag after escape', cr
 }));
 
 function setupFlagParser(parser) {
-    var flagCollector = new ValueCollector('x', false, false);
-    var flagParser = new FlagParser(true, flagCollector);
+    var flagCollector = new ValueCollector({name: 'x', default: false, required: false});
+    var flagParser = new FlagParser({value: true, collector: flagCollector});
     parser.flags['-x'] = flagParser;
     parser.flags['--x'] = flagParser;
     return flagCollector;
@@ -159,8 +159,8 @@ test('flag parser does not recognize unknown flag', createCase({
 function setupValueParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
-    var xCollector = new ValueCollector('x', null, false);
-    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    var xCollector = new ValueCollector({name: 'x', required: false});
+    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.flags['-x'] = xParser;
     parser.flags['--x'] = xParser;
     return xCollector;
@@ -225,8 +225,8 @@ test('value parser captures value in compact long form', createCase({
 function setupRequiredValueParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
-    var xCollector = new ValueCollector('x', null, true);
-    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    var xCollector = new ValueCollector({name: 'x', default: null, required: true});
+    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.flags['-x'] = xParser;
     parser.flags['--x'] = xParser;
     return xCollector;
@@ -244,8 +244,8 @@ test('required value parser requires value for flag', createCase({
 function setupRequiredArgumentParser(parser) {
     var xConverter = new Converter();
     var xValidator = new Validator();
-    var xCollector = new ValueCollector('x', null, true);
-    var xParser = new ValueParser('x', xConverter, xValidator, xCollector);
+    var xCollector = new ValueCollector({name: 'x', default: null, required: true});
+    var xParser = new ValueParser({name: 'x', converter: xConverter, validator: xValidator, collector: xCollector, required: true});
     parser.args.push(xParser);
     return xCollector;
 }
@@ -261,12 +261,12 @@ test('required value parser requires value for argument', createCase({
 function setupMultiArgumentParser(parser) {
     var converter = new Converter();
     var validator = new Validator();
-    var xCollector = new ValueCollector('x', null, true);
-    var yCollector = new ValueCollector('y', null, true);
-    var zCollector = new ValueCollector('z', null, true);
-    var xParser = new ValueParser('x', converter, validator, xCollector);
-    var yParser = new ValueParser('y', converter, validator, yCollector);
-    var zParser = new ValueParser('z', converter, validator, zCollector);
+    var xCollector = new ValueCollector({name: 'x', default: null, required: true});
+    var yCollector = new ValueCollector({name: 'y', default: null, required: true});
+    var zCollector = new ValueCollector({name: 'z', default: null, required: true});
+    var xParser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: xCollector, required: true});
+    var yParser = new ValueParser({name: 'y', converter: converter, validator: validator, collector: yCollector, required: true});
+    var zParser = new ValueParser({name: 'z', converter: converter, validator: validator, collector: zCollector, required: true});
     parser.args.push(xParser);
     parser.args.push(yParser);
     parser.args.push(zParser);
@@ -312,12 +312,12 @@ function setupArgumentsAndFlagsParsers(parser) {
     var validator = Validator.lift({
         validate: True
     });
-    var xCollector = new ValueCollector('x', null, true);
-    var yCollector = new ValueCollector('y', null, true);
-    var zCollector = new ValueCollector('z', null, true);
-    var xParser = new ValueParser('x', converter, validator, xCollector, true);
-    var yParser = new ValueParser('y', converter, validator, yCollector, true);
-    var zParser = new ValueParser('z', converter, validator, zCollector, true);
+    var xCollector = new ValueCollector({name: 'x', default: null, required: true});
+    var yCollector = new ValueCollector({name: 'y', default: null, required: true});
+    var zCollector = new ValueCollector({name: 'z', default: null, required: true});
+    var xParser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: xCollector, required: false});
+    var yParser = new ValueParser({name: 'y', converter: converter, validator: validator, collector: yCollector, required: false});
+    var zParser = new ValueParser({name: 'z', converter: converter, validator: validator, collector: zCollector, required: false});
     parser.args.push(xParser);
     parser.args.push(yParser);
     parser.args.push(zParser);
@@ -346,8 +346,8 @@ test('parser accepts interleaved combination of positional and compact flag argu
 function setupConverterValidatorParser(commandParser) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(isEven);
-    var collector = new ValueCollector('x', null, true);
-    var parser = new ValueParser('x', converter, validator, collector, true);
+    var collector = new ValueCollector({name: 'x', default: null, required: true});
+    var parser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: collector, required: false});
     commandParser.args.push(parser);
     commandParser.flags['-x'] = parser;
     return collector;
@@ -398,8 +398,8 @@ test('parser fails to validate flag', createCase({
 function setupArrayCollectorParser(commandParser) {
     var converter = Converter.lift(Number);
     var validator = Validator.lift(isEven);
-    var collector = new ArrayCollector('x', 'x', 3, 3);
-    var parser = new ValueParser('x', converter, validator, collector, true);
+    var collector = new ArrayCollector({name: 'x', arg: 'x', minLength: 3, maxLength: 3});
+    var parser = new ValueParser({name: 'x', converter: converter, validator: validator, collector: collector, required: false});
     commandParser.tail = parser;
     commandParser.flags['-x'] = parser;
     return collector;
@@ -469,9 +469,9 @@ function setupDifferenceCollectorParser(parser, iterator) {
     iterator.plusFlags = true;
     var converter = Converter.lift(Number);
     var validator = Validator.lift(True);
-    var collector = new DifferenceCollector('n', 5);
-    parser.plus = new ValueParser('n', converter, validator, collector);
-    parser.minus = new ValueParser('n', converter, validator, collector);
+    var collector = new DifferenceCollector({name: 'n', value: 5});
+    parser.plus = new ValueParser({name: 'n', converter: converter, validator: validator, collector: collector});
+    parser.minus = new ValueParser({name: 'n', converter: converter, validator: validator, collector: collector});
     return collector;
 }
 
@@ -496,9 +496,9 @@ test('parser takes difference one step forward, two steps back', createCase({
 }));
 
 function setupVerbosityParser(parser, iterator) {
-    var collector = new DifferenceCollector('verbosity', 0, -5, 5);
-    parser.flags['-v'] = new FlagParser(1, collector);
-    parser.flags['-q'] = new FlagParser(-1, collector);
+    var collector = new DifferenceCollector({name: 'verbosity', value: 0, min: -5, max: 5});
+    parser.flags['-v'] = new FlagParser({value: 1, collector: collector});
+    parser.flags['-q'] = new FlagParser({value: -1, collector: collector});
     return collector;
 }
 
@@ -537,8 +537,8 @@ test('parser finds too little verbosity', createCase({
 function setupEscapedExpressionParser(parser) {
     var subParser = new Parser();
     parser.escape = subParser;
-    var valueCollector = new ValueCollector('x', null, true);
-    var valueParser = new ValueParser('x', new Converter(), new Validator(), valueCollector);
+    var valueCollector = new ValueCollector({name: 'x', required: true});
+    var valueParser = new ValueParser({name: 'x', converter: new Converter(), validator: new Validator(), collector: valueCollector, required: true});
     subParser.args.push(valueParser);
     return valueCollector;
 }
@@ -553,8 +553,8 @@ test('escaped expression subparser captures arguments', createCase({
 
 function setupInitialFlagsParser(parser, iterator) {
     iterator.initialFlag();
-    var collector = new ValueCollector('x', false, true);
-    parser.flags['-x'] = new FlagParser(true, collector);
+    var collector = new ValueCollector({name: 'x', default: false, required: true});
+    parser.flags['-x'] = new FlagParser({value: true, collector: collector});
     return collector;
 }
 

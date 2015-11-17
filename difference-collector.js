@@ -1,10 +1,10 @@
 'use strict';
 
-function DifferenceCollector(name, value, min, max) {
-    this.name = name;
-    this.value = value;
-    this.min = min;
-    this.max = max;
+function DifferenceCollector(args) {
+    this.name = args.name;
+    this.value = args.value;
+    this.min = args.min;
+    this.max = args.max;
 }
 
 DifferenceCollector.prototype.collect = function collect(value) {

@@ -1,10 +1,10 @@
 'use strict';
 
-function ValueCollector(name, value, required) {
-    this.name = name;
-    this.value = value;
+function ValueCollector(args) {
+    this.name = args.name;
+    this.value = args.default;
+    this.required = args.required;
     this.collected = false;
-    this.required = required;
 }
 
 ValueCollector.prototype.collect = function collect(value, iterator, delegate) {

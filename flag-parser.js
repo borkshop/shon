@@ -1,8 +1,8 @@
 'use strict';
 
-function FlagParser(value, collector) {
-    this.value = value;
-    this.collector = collector;
+function FlagParser(args) {
+    this.value = args.value;
+    this.collector = args.collector;
 }
 
 FlagParser.prototype.parse = function parse(iterator, delegate, flag) {

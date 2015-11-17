@@ -1,11 +1,11 @@
 'use strict';
 
-function ValueParser(name, converter, validator, collector, optional) {
-    this.name = name;
-    this.converter = converter;
-    this.validator = validator;
-    this.collector = collector;
-    this.optional = optional;
+function ValueParser(args) {
+    this.name = args.name;
+    this.converter = args.converter;
+    this.validator = args.validator;
+    this.collector = args.collector;
+    this.required = args.required;
 }
 
 ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
@@ -22,7 +22,7 @@ ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
             delegate.cursor(iterator.cursor, -1);
             return false;
         }
-    } else if (!this.optional) {
+    } else if (this.required) {
         delegate.error('Expected: ' + this.name);
         delegate.cursor(iterator.cursor);
         return false;

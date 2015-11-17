@@ -1,18 +1,18 @@
 'use strict';
 
-function ArrayCollector(name, valueName, min, max) {
-    this.name = name;
-    this.valueName = valueName;
+function ArrayCollector(args) {
+    this.name = args.name;
+    this.arg = args.arg;
     this.value = [];
-    this.min = min;
-    this.max = max;
+    this.minLength = args.minLength;
+    this.maxLength = args.maxLength;
     this.collected = false;
 }
 
 ArrayCollector.prototype.collect = function collect(value, iterator, delegate) {
     this.value.push(value);
-    if (this.value.length > this.max) {
-        delegate.error('Too many: ' + this.valueName);
+    if (this.value.length > this.maxLength) {
+        delegate.error('Too many: ' + this.arg);
         delegate.cursor(iterator.cursor);
         return false;
     }
@@ -20,8 +20,8 @@ ArrayCollector.prototype.collect = function collect(value, iterator, delegate) {
 }
 
 ArrayCollector.prototype.capture = function capture(iterator, delegate) {
-    if (this.value.length < this.min) {
-        delegate.error('Too few: ' + this.valueName);
+    if (this.value.length < this.minLength) {
+        delegate.error('Too few: ' + this.arg);
         delegate.cursor(iterator.cursor);
     }
     return this.value;

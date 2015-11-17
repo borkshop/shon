@@ -154,9 +154,9 @@ function capture(command, collectors, iterator, delegate) {
 function setupCollector(term, def) {
     var collector;
     if (term.collectorType === 'array') {
-        collector = new ArrayCollector(term.name, term.arg, term.minLength, term.maxLength);
+        collector = new ArrayCollector({name: term.name, arg: term.arg, minLength: term.minLength, maxLength: term.maxLength});
     } else {
-        collector = new ValueCollector(term.name, def, term.required);
+        collector = new ValueCollector({name: term.name, default: def, required: term.required});
     }
     return collector;
 }
@@ -191,9 +191,9 @@ function setupConverter(term, isBoolean) {
 
 function setupTermParser(term, flag, value, converter, validator, collector, delegate) {
     if (term.trump) {
-        return new TrumpParser(term.name, collector);
+        return new TrumpParser({name: term.name, collector: collector});
     } else if (term.commands) {
-        return new CommandParser(term.commands, collector);
+        return new CommandParser({commands: term.commands, collector: collector});
     } else if (term.arg == null) {
         // Establish the value for flags
         if (flag && flag.value != null) {
@@ -205,16 +205,16 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
             value = !value;
         }
 
-        return new FlagParser(value, collector);
+        return new FlagParser({value: value, collector: collector});
     } else if (term.type === 'shon') {
-        return new ShonParser(term.arg, collector, !term.required, false);
+        return new ShonParser({name: term.arg, collector: collector, required: term.required, json: false});
     } else if (term.type === 'jshon') {
-        return new ShonParser(term.arg, collector, !term.required, true);
+        return new ShonParser({name: term.arg, collector: collector, required: term.required, json: true});
     } else if (term.type === 'json') {
         converter = Converter.lift(convertJson);
     }
 
-    return new ValueParser(term.arg, converter, validator, collector, !term.required);
+    return new ValueParser({name: term.arg, converter: converter, validator: validator, collector: collector, required: term.required});
 }
 
 function isPositive(number) {
@@ -246,9 +246,9 @@ function convertJson(string, iterator, delegate) {
     }
 }
 
-function CommandParser(commands, collector) {
-    this.commands = commands;
-    this.collector = collector;
+function CommandParser(args) {
+    this.commands = args.commands;
+    this.collector = args.collector;
 }
 
 CommandParser.prototype.parse = function _parse(iterator, delegate) {

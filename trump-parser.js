@@ -1,8 +1,8 @@
 'use strict';
 
-function TrumpParser(value, collector) {
-    this.value = value;
-    this.collector = collector;
+function TrumpParser(args) {
+    this.value = args.value;
+    this.collector = args.collector;
 }
 
 TrumpParser.prototype.parse = function parse(iterator, delegate, flag) {

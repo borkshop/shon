@@ -1,10 +1,10 @@
 'use strict';
 
-function ShonParser(name, collector, optional, json) {
-    this.name = name;
-    this.collector = collector;
-    this.optional = optional;
-    this.json = json;
+function ShonParser(args) {
+    this.name = args.name;
+    this.collector = args.collector;
+    this.required = args.required;
+    this.json = args.json;
 }
 
 ShonParser.prototype.parse = function parse(iterator, delegate) {
@@ -25,7 +25,7 @@ ShonParser.prototype.parseValue = function parseValue(cursor, delegate, root) {
     if (!cursor.done()) {
         var arg = cursor.shift();
         return this.parseRemainingValue(arg, cursor, delegate);
-    } else if (!this.optional || !root) {
+    } else if (this.required || !root) {
         delegate.error('Expected value');
         delegate.cursor(cursor);
         return null;

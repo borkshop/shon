@@ -18,8 +18,8 @@ function cases(cases) {
             }
             var delegate = new Delegate(assert, logs);
             var cursor = new Cursor(test.input);
-            var collector = new ValueCollector(null, null, true);
-            var parser = new ShonParser(null, collector, true, test.json);
+            var collector = new ValueCollector({});
+            var parser = new ShonParser({collector: collector, required: false, json: test.json});
             var output = parser.parseValue(cursor, delegate);
             assert.deepEquals(output, test.output, 'output matches');
         }
