@@ -46,8 +46,7 @@ line = term:usageline {
     }
 
 usageline = term:(optional / required) type:type trump:$('*' / '') help:help {
-        term.validatorType = type.validator;
-        term.converterType = type.converter;
+        term.type = type;
         term.help = help;
         term.usage = text().trim();
         if (trump === '*') {
@@ -93,8 +92,7 @@ tail = collector:collector {
             arg: null,
             command: null,
             collectorType: collector.type,
-            validatorType: null,
-            converterType: null,
+            type: null,
             required: true,
             minLength: collector.minLength,
             maxLength: collector.maxLength,
@@ -175,20 +173,10 @@ arg = '<' name:name '>' _ {
         return {name: name};
     }
 
-type = ':quantity' _ {
-        return {converter: 'number', validator: 'positive'};
-    } / ':number' _ {
-        return {converter: 'number', validator: 'number'};
-    } / ':boolean' _ {
-        return {converter: 'boolean', validator: null};
-    } / ':shon' _ {
-        return {converter: 'shon', validator: null};
-    } / ':json' _ {
-        return {converter: 'json', validator: null};
-    } / ':jshon' _ {
-        return {converter: 'jshon', validator: null};
+type = ':' name:name _ {
+        return name;
     } / _ {
-        return {converter: null, validator: null};
+        return null;
     }
 
 help = [ \n]* help:$( ( [ \n]? !( [\[ ] ) !( _ name ':' ) [^\n] )* ) [ \n]* {

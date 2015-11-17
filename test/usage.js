@@ -31,8 +31,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -48,8 +47,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -65,8 +63,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -82,8 +79,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -99,8 +95,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -116,8 +111,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: false, // optional
             minLength: null,
             maxLength: null
@@ -133,8 +127,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: false, // optional
             minLength: null,
             maxLength: null
@@ -150,8 +143,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             optionalFlag: true,
             minLength: null,
@@ -168,8 +160,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -185,8 +176,7 @@ test('positive cases', cases([
             command: null,
             help: 'This is a flag',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -202,8 +192,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: 'array',
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: 0,
             maxLength: Infinity
@@ -219,8 +208,7 @@ test('positive cases', cases([
             command: null,
             help: 'All remaining arguments',
             collectorType: 'array',
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: 0,
             maxLength: Infinity
@@ -236,8 +224,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: 'array',
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: 2,
             maxLength: 3
@@ -253,8 +240,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: 'array',
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: 2,
             maxLength: Infinity
@@ -270,8 +256,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: 'array',
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: 4,
             maxLength: 4
@@ -287,8 +272,7 @@ test('positive cases', cases([
             command: null,
             help: 'Number of burritos desired',
             collectorType: null,
-            converterType: 'number',
-            validatorType: 'positive',
+            type: 'quantity',
             required: true,
             minLength: null,
             maxLength: null
@@ -307,8 +291,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: true,
             minLength: null,
             maxLength: null
@@ -327,8 +310,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: 'boolean',
-            validatorType: null,
+            type: 'boolean',
             required: true,
             minLength: null,
             maxLength: null
@@ -347,8 +329,7 @@ test('positive cases', cases([
             command: null,
             help: '',
             collectorType: null,
-            converterType: null,
-            validatorType: null,
+            type: null,
             required: false,
             minLength: null,
             maxLength: null

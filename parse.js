@@ -165,11 +165,11 @@ function setupValidator(term) {
     var validator;
     if (term.validator) {
         validator = term.validator;
-    } else if (term.validatorType === 'number') {
+    } else if (term.type === 'number') {
         validator = isNumber;
-    } else if (term.validatorType === 'positive') {
+    } else if (term.type === 'quantity') {
         validator = isPositive;
-    } else if (term.validatorType === 'options') {
+    } else if (term.type === 'options') {
         // TODO
     } else if (term.validator) {
         validator = term.validator;
@@ -181,9 +181,9 @@ function setupConverter(term, isBoolean) {
     var converter;
     if (term.converter) {
         converter = term.converter;
-    } else if (isBoolean || term.converterType === 'boolean') {
+    } else if (isBoolean || term.type === 'boolean') {
         converter = convertBoolean;
-    } else if (term.converterType === 'number') {
+    } else if (term.type === 'number' || term.type === 'quantity') {
         converter = Number;
     }
     return Converter.lift(converter);
@@ -206,11 +206,11 @@ function setupTermParser(term, flag, value, converter, validator, collector, del
         }
 
         return new FlagParser(value, collector);
-    } else if (term.converterType === 'shon') {
+    } else if (term.type === 'shon') {
         return new ShonParser(term.arg, collector, !term.required, false);
-    } else if (term.converterType === 'jshon') {
+    } else if (term.type === 'jshon') {
         return new ShonParser(term.arg, collector, !term.required, true);
-    } else if (term.converterType === 'json') {
+    } else if (term.type === 'json') {
         converter = Converter.lift(convertJson);
     }
 
