@@ -8,7 +8,7 @@
     "[-n|--name] <name>\n    What is your name?",
     "[-c|--color] <color>\n    What is your favorite color?",
     "[-a|--airpseed] <airspeed> :number\n    What is the average airspeed velocity of an unladen swallow?",
-    "[-h|--help]*\n"
+    "[-h|--help]*"
   ],
   "terms": {
     "name": {
@@ -25,8 +25,7 @@
       "arg": "name",
       "command": null,
       "collectorType": null,
-      "validatorType": null,
-      "converterType": null,
+      "type": null,
       "required": true,
       "minLength": null,
       "maxLength": null,
@@ -47,8 +46,7 @@
       "arg": "color",
       "command": null,
       "collectorType": null,
-      "validatorType": null,
-      "converterType": null,
+      "type": null,
       "required": true,
       "minLength": null,
       "maxLength": null,
@@ -69,8 +67,7 @@
       "arg": "airspeed",
       "command": null,
       "collectorType": null,
-      "validatorType": "number",
-      "converterType": "number",
+      "type": "number",
       "required": true,
       "minLength": null,
       "maxLength": null,
@@ -91,13 +88,11 @@
       "arg": null,
       "command": null,
       "collectorType": null,
-      "validatorType": null,
-      "converterType": null,
+      "type": "trump",
       "required": false,
       "minLength": null,
       "maxLength": null,
-      "help": "",
-      "trump": true
+      "help": ""
     }
   }
 }

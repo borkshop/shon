@@ -63,7 +63,16 @@ module.exports = (function() {
                     delete term.usage;
                     delete term.name;
                 }
-                return {name: null, description: null, usage: usage, terms: map};
+                return {
+                    name: null,
+                    description: null,
+                    usage: usage,
+                    terms: map,
+                    parsers: {},
+                    converters: {},
+                    validators: {},
+                    collectors: {}
+                };
             },
         peg$c11 = { type: "other", description: "usage line" },
         peg$c12 = function(name, term) {

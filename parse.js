@@ -11,6 +11,7 @@ var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
 var TrumpParser = require('./trump-parser');
 var types = require('./types');
+var merge = require('./merge');
 
 function parse(command, iterator, delegate) {
     var parser = new Parser();
@@ -26,6 +27,11 @@ function parse(command, iterator, delegate) {
 
 function setup(command, parser, collectors, iterator, delegate) {
     var terms = command._terms || command.terms;
+
+    var Parsers = merge(types.parsers, command._parsers || command.parsers);
+    var Converters = merge(types.converters, command._converters || command.converters);
+    var Validators = merge(types.validators, command._validators || command.validators);
+    var Collectors = merge(types.collectors, command._collectors || command.collectors);
 
     var names = Object.keys(terms);
     for (var index = 0; index < names.length; index++) {
@@ -54,8 +60,8 @@ function setup(command, parser, collectors, iterator, delegate) {
             term.type = 'boolean';
         }
 
-        term.converter = Converter.lift(term.converter || types.converters[term.type]);
-        term.validator = Validator.lift(term.validator || types.validators[term.type]);
+        term.converter = Converter.lift(term.converter || Converters[term.type]);
+        term.validator = Validator.lift(term.validator || Validators[term.type]);
 
         // scan for a flag that has a default value
         for (var findex = 0; findex < term.flags.length; findex++) {
@@ -80,13 +86,15 @@ function setup(command, parser, collectors, iterator, delegate) {
 
         term.default = def;
 
-        var Collector = types.collectors[term.collectorType] || ValueCollector;
+        var Collector = Collectors[term.type] ||
+            Collectors[term.collectorType] ||
+            ValueCollector;
         term.collector = new Collector(term);
 
         // if there are flags, set up parsers for each flag
         for (var findex = 0; findex < term.flags.length; findex++) {
             var flag = term.flags[findex];
-            var termParser = setupTermParser(term, flag, iterator, delegate);
+            var termParser = setupTermParser(Parsers, term, flag, iterator, delegate);
             if (delegate.isDone()) {
                 return false;
             }
@@ -102,7 +110,7 @@ function setup(command, parser, collectors, iterator, delegate) {
             term.optionalFlag ||
             (term.required && term.arg != null)
         ) {
-            var termParser = setupTermParser(term, null, iterator, delegate);
+            var termParser = setupTermParser(Parsers, term, null, iterator, delegate);
             if (delegate.isDone()) {
                 return false;
             }
@@ -124,7 +132,7 @@ function setup(command, parser, collectors, iterator, delegate) {
     return true;
 };
 
-function setupTermParser(term, flag, iterator, delegate) {
+function setupTermParser(Parsers, term, flag, iterator, delegate) {
     if (term.type === 'trump') {
         return new TrumpParser(term);
     } else if (term.type === 'command') {
@@ -143,7 +151,7 @@ function setupTermParser(term, flag, iterator, delegate) {
         return new FlagParser({value: value, collector: term.collector});
     }
 
-    var TermParser = term.parser || types.parsers[term.type] || ValueParser;
+    var TermParser = term.parser || Parsers[term.type] || ValueParser;
     return new TermParser(term);
 }
 

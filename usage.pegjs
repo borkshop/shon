@@ -32,7 +32,16 @@ termlines = terms:termline* {
             delete term.usage;
             delete term.name;
         }
-        return {name: null, description: null, usage: usage, terms: map};
+        return {
+            name: null,
+            description: null,
+            usage: usage,
+            terms: map,
+            parsers: {},
+            converters: {},
+            validators: {},
+            collectors: {}
+        };
     }
 
 termline 'usage line' = _ name:name ':' _ term:usageline '\n'? {

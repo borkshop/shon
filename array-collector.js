@@ -4,8 +4,8 @@ function ArrayCollector(args) {
     this.name = args.name;
     this.arg = args.arg;
     this.value = [];
-    this.minLength = args.minLength;
-    this.maxLength = args.maxLength;
+    this.minLength = args.minLength || 0;
+    this.maxLength = args.maxLength || Infinity;
     this.collected = false;
 }
 
