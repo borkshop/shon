@@ -4,10 +4,13 @@ var Command = require('..');
 
 var command = new Command('cut', {
     delim: '[-d <delim>]',
-    fields: '[-f <fields>...]'
+    fields: '[-f <fields>]',
+    inputs: '[<file>{1..}] :input',
+    output: '[-o <file>] :output'
 });
 
 command.delim.default = ' ';
+command.fields.default = [];
 
 command.fields.converter = function convert(fields) {
     var parts = fields.split(',');
@@ -24,29 +27,38 @@ function isNumber(number) {
 
 var config = command.exec();
 
-process.stdin.setEncoding('utf-8');
-process.stdin.resume();
-var remainder = '';
-process.stdin.on('data', function (line) {
-    remainder += line;
-    flush();
-});
+config.inputs.forEach(onInput);
 
-function flush() {
-    for (;;) {
-        var index = remainder.indexOf('\n');
-        if (index < 0) {
-            break;
+function onInput(input) {
+
+    var remainder = '';
+    input.on('data', function (line) {
+        remainder += line;
+        flush();
+    });
+    input.on('end', function () {
+        if (remainder) {
+            remainder += '\n';
+            flush();
         }
-        var line = remainder.slice(index);
-        onLine(line);
-        remainder = remainder.slice(index + 1);
+    });
+
+    function flush(end) {
+        for (;;) {
+            var index = remainder.indexOf('\n');
+            if (index < 0) {
+                break;
+            }
+            var line = remainder.slice(0, index);
+            onLine(line);
+            remainder = remainder.slice(index + 1);
+        }
     }
 }
 
 function onLine(line) {
     var parts = line.trim().split(config.delim);
-    console.log(config.fields.map(function get(field) {
+    config.output.write(config.fields.map(function get(field) {
         return parts[field - 1];
-    }).join(config.delim));
+    }).join(config.delim) + '\n');
 }

@@ -7,6 +7,7 @@ var Parser = require('./parser');
 var ValueCollector = require('./value-collector');
 var Converter = require('./converter');
 var Validator = require('./validator');
+var Defaulter = require('./defaulter');
 var FlagParser = require('./flag-parser');
 var ValueParser = require('./value-parser');
 var TrumpParser = require('./trump-parser');
@@ -32,12 +33,17 @@ function setup(command, parser, collectors, iterator, delegate) {
     var Converters = merge(types.converters, command._converters || command.converters);
     var Validators = merge(types.validators, command._validators || command.validators);
     var Collectors = merge(types.collectors, command._collectors || command.collectors);
+    var Defaulters = merge(types.defaults, command.defaults || command.defaults);
 
     var names = Object.keys(terms);
     for (var index = 0; index < names.length; index++) {
         var name = names[index];
         var term = terms[name];
         term.name = term.name || name;
+
+        term.converter = Converter.lift(term.converter || Converters[term.type], term);
+        term.validator = Validator.lift(term.validator || Validators[term.type], term);
+        term.defaulter = Defaulter.lift(term.defaulter || Defaulters[term.type], term);
 
         // scan for whether any flag has a specified value
         var def = term.default;
@@ -59,9 +65,6 @@ function setup(command, parser, collectors, iterator, delegate) {
         if (isBoolean) {
             term.type = 'boolean';
         }
-
-        term.converter = Converter.lift(term.converter || Converters[term.type]);
-        term.validator = Validator.lift(term.validator || Validators[term.type]);
 
         // scan for a flag that has a default value
         for (var findex = 0; findex < term.flags.length; findex++) {
@@ -86,9 +89,7 @@ function setup(command, parser, collectors, iterator, delegate) {
 
         term.default = def;
 
-        var Collector = Collectors[term.type] ||
-            Collectors[term.collectorType] ||
-            ValueCollector;
+        var Collector = Collectors[term.type] || Collectors[term.collectorType] || ValueCollector;
         term.collector = new Collector(term);
 
         // if there are flags, set up parsers for each flag

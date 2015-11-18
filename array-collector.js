@@ -6,6 +6,7 @@ function ArrayCollector(args) {
     this.value = [];
     this.minLength = args.minLength || 0;
     this.maxLength = args.maxLength || Infinity;
+    this.defaulter = args.defaulter;
     this.collected = false;
 }
 
@@ -20,6 +21,11 @@ ArrayCollector.prototype.collect = function collect(value, iterator, delegate) {
 }
 
 ArrayCollector.prototype.capture = function capture(iterator, delegate) {
+    if (this.defaulter) {
+        while (this.value.length < this.minLength) {
+            this.value.push(this.defaulter.default());
+        }
+    }
     if (this.value.length < this.minLength) {
         delegate.error('Too few: ' + this.arg);
         delegate.cursor(iterator.cursor);

@@ -22,7 +22,7 @@ $ npm install --save shon
 A boolean flag is an option that switches a config value from false to true.
 
 ```js
-var Command = require('shon');
+var Command = require('shon/command');
 var command = new Command('dwim', {
     bool: '[-b|--bool] A boolean flag'
 });
@@ -87,11 +87,12 @@ optional and must be specified with the flag.
 ```js
 'use strict';
 
-var Command = require('shon');
+var Command = require('shon/command');
 
 var command = new Command('cut', {
-    delim: '[-d <delim>]',
-    fields: '[-f <fields>]'
+    delim: '[-d <delim>] The delimiter to split on, space by default',
+    fields: '[-f <fields>] Comma separated field numbers',
+    input: '[<file>{1..}] :input The file or files to read, or standard input'
 });
 
 command.delim.default = ' ';
@@ -113,6 +114,7 @@ var config = command.exec();
 
 // using config.delim and config.fields...
 // see demos/cut.js
+config.input.forEach(onInput);
 ```
 
 ## Sum
@@ -120,7 +122,7 @@ var config = command.exec();
 The sum command accepts any number of arguments and computes their sum.
 
 ```js
-var Command = require('shon');
+var Command = require('shon/command');
 var command = new Command('sum computes the sum of multiple numbers', {
     numbers: '<number>... :number'
 });
@@ -155,7 +157,7 @@ necessary to convert the flag values as strings to their corresponding boolean
 value.
 
 ```js
-var Command = require('shon');
+var Command = require('shon/command');
 var command = new Command('soup', {
     soup: '[--soup=true*|-s=true|--no-soup=false|-S=false] :boolean ' +
         'Whether to serve soup'
@@ -409,10 +411,14 @@ Each term has the following shape:
     collects a single value.
     A future version may introduce a `difference` collector for upgrading or
     downgrading a value.
--   `converterType` is one of `boolean`, `number`, or null.
--   `validatorType` is one of `number`, `positive`, or null.
+-   `type` is an arbitrary type name which may have custom parsers, converters,
+    validators, or collectors associated.
+    SHON provides behaviors for `boolean`, `number`, `quantity`, `json`,
+    `shon`, and `jshon`.
+-   `parser` is an optional parser constructor.
 -   `converter` is an optional converter object or function.
 -   `validator` is an optional validator object or function.
+-   `collector` is an optional collector object or function.
 -   `required` implies that this term must be specified on the command line.
 -   `optionalFlag` implies that this term's argument can be specified either in
     order or earlier if specified with its flag.
@@ -428,7 +434,29 @@ A flag has the following shape:
     It will be converted and validated based on the term's type.
 -   `default` is `true` if the flag produces the default value.
 
-Converter objects implement a `convert` method. Convert functions accept a
+## Types
+
+-   `number` converts and validates arbitrary JavaScript numbers, positive and
+    negative double point.
+-   `quantity` converts and validates positive integers up to 2^53.
+-   `boolean` converts and validates the strings 'true' and 'false', to their
+    respecitve boolean values.
+-   `input` produces a readable stream from a file name, or `-` for standard
+    input.
+    Standard input is implied if the argument is optional and the argument is
+    omitted.
+-   `atinput` produces a readable stream, from the literal argument, or from a
+    file name if prefixed with `@`, or standard input if `@-`.
+-   `output` produces a writable stream from a file name, or `-` for standard
+    output.
+    Standard output is implied if the argument is optional and omitted.
+-   `json` parses and validates JSON strings.
+-   `shon` parses and validates SHON argument sequences.
+-   `jshon` parses SHON, expanding JSON for any value.
+
+## Converters
+
+Converter objects implement a `convert` method. Converter functions accept a
 string from the command line and return the corresponding JavaScript value.
 They also receive an `iterator` and `delegate` object which can be used
 to report errors and halt the parser.
@@ -446,10 +474,34 @@ function convertBoolean(string, iterator, delegate) {
 }
 ```
 
+## Validators
+
 Validator objects implement a `validate` method. Validate functions accept a
 value and return whether it is valid.
 
-## SHON Shell Object Notation
+...
+
+## Collectors
+
+...
+
+## Parsers
+
+...
+
+## Iterators
+
+...
+
+## Cursors
+
+...
+
+## Delegates
+
+...
+
+## SHON (SHell Object Notation)
 
 SHON is an idiomatic notation for expressing objects at the command line.
 All of JSON can be expressed with SHON.
