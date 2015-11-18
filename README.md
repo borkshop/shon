@@ -376,6 +376,15 @@ Each term may be followed by a type annotation.
 -   `:jshon` means that the value of the argument must be expressed with JSON
     or SHON with JSON possibly embedded in place of values.
 -   `:json` means that the value of the argument must be expressed with JSON.
+-   `:input` produces a readable stream from a file name, or `-` for standard
+    input.
+    Standard input is implied if the argument is optional and the argument is
+    omitted.
+-   `:atinput` produces a readable stream, from the literal argument, or from a
+    file name if prefixed with `@`, or standard input if `@-`.
+-   `:output` produces a writable stream from a file name, or `-` for standard
+    output.
+    Standard output is implied if the argument is optional and omitted.
 
 Future versions of this library will introduce further type annotations for
 reading and writing by file name or `-`.
@@ -433,26 +442,6 @@ A flag has the following shape:
 -   `value` is the string representation of the value that this flag will set.
     It will be converted and validated based on the term's type.
 -   `default` is `true` if the flag produces the default value.
-
-## Types
-
--   `number` converts and validates arbitrary JavaScript numbers, positive and
-    negative double point.
--   `quantity` converts and validates positive integers up to 2^53.
--   `boolean` converts and validates the strings 'true' and 'false', to their
-    respecitve boolean values.
--   `input` produces a readable stream from a file name, or `-` for standard
-    input.
-    Standard input is implied if the argument is optional and the argument is
-    omitted.
--   `atinput` produces a readable stream, from the literal argument, or from a
-    file name if prefixed with `@`, or standard input if `@-`.
--   `output` produces a writable stream from a file name, or `-` for standard
-    output.
-    Standard output is implied if the argument is optional and omitted.
--   `json` parses and validates JSON strings.
--   `shon` parses and validates SHON argument sequences.
--   `jshon` parses SHON, expanding JSON for any value.
 
 ## Converters
 
