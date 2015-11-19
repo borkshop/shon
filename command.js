@@ -66,7 +66,11 @@ Command.prototype.exec = function _exec(args, index, delegate) {
 Command.prototype.parse = function _parse(args, index, delegate) {
     var cursor = new Cursor(args, index);
     var iterator = new Iterator(cursor);
-    delegate = delegate || new Delegate();
+    delegate = delegate || new Delegate({
+        cursor: cursor,
+        command: this,
+        logUsage: logUsage
+    });
     return parse(this, iterator, delegate);
 };
 

@@ -14,13 +14,16 @@ function exec(command, args, index, delegate) {
     }
     var cursor = new Cursor(args, index);
     var iterator = new Iterator(cursor);
-    delegate = delegate || new Delegate();
+    delegate = delegate || new Delegate({
+        cursor: cursor,
+        logUsage: logUsage,
+        command: command
+    });
     var config = parse(command, iterator, delegate);
     if (delegate.trumped) {
         return delegate.trumped;
     }
     if (config === null) {
-        logUsage(command, delegate);
         return delegate.end();
     }
     return config;

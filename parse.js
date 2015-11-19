@@ -125,7 +125,7 @@ function setup(command, parser, collectors, iterator, delegate) {
             }
         }
 
-        if (!term.trump) {
+        if (term.type !== 'trump') {
             collectors.push(term.collector);
         }
     }
@@ -182,7 +182,7 @@ CommandParser.prototype.parse = function _parse(iterator, delegate) {
 
         if (!(command in this.commands)) {
             delegate.error('Unknown command: ' + command);
-            delegate.cursor(iterator.cursor, -1);
+            delegate.cursor(-1);
             return false;
         }
 
@@ -199,7 +199,7 @@ CommandParser.prototype.parse = function _parse(iterator, delegate) {
 
     } else {
         delegate.error('Expected a command');
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
         // TODO one of
         return false;
     }

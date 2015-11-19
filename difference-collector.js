@@ -15,10 +15,10 @@ DifferenceCollector.prototype.collect = function collect(value) {
 DifferenceCollector.prototype.capture = function capture(iterator, delegate) {
     if (this.value > this.max) {
         delegate.error('Too much: ' + this.name + ' (maximum is ' + this.max + ')');
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
     } else if (this.value < this.min) {
         delegate.error('Too little: ' + this.name + ' (minimum is ' + this.min + ')');
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
     }
     return this.value;
 };

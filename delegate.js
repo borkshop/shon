@@ -1,8 +1,13 @@
 'use strict';
 
-function Delegate() {
+function Delegate(args) {
+    args = args || {};
     this.exitCode = 0;
     this.trumped = null;
+    this._cursor = args.cursor;
+    this.logUsage = args.logUsage;
+    this.command = args.command;
+    this.loggedUsage = false;
 }
 
 Delegate.prototype.isDone = function isDone() {
@@ -14,7 +19,11 @@ Delegate.prototype.log = function log(message, cursor) {
 };
 
 Delegate.prototype.error = function error(message) {
-    console.error(message);
+    if (this.logUsage && !this.loggedUsage) {
+        this.logUsage(this.command, this);
+        this.loggedUsage = true;
+    }
+    console.error('\n' + message);
     this.exitCode = 1;
 };
 
@@ -23,6 +32,12 @@ Delegate.prototype.warn = function warn(message) {
 };
 
 Delegate.prototype.cursor = function markCursor(cursor, offset) {
+    // New usage allows the cursor to be provided to the delegate constructor.
+    if (this._cursor && offset === undefined) {
+        offset = cursor;
+        cursor = this._cursor;
+    }
+
     var cursorIndex = cursor.index + (offset || 0);
     var line = '';
     var length = 0;
