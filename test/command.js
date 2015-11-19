@@ -615,3 +615,15 @@ var reincarnate = JSON.parse(JSON.stringify(defaultPositional));
 
 test('positional arguments may have defaults', cases(defaultPositional, defaultPositionalCases));
 test('round trips command description through JSON', cases(reincarnate, defaultPositionalCases));
+
+test('trump flags', cases(new Command('helpful', {
+    help: '[-h|--help]*'
+}), [
+
+    {
+        name: 'trump flag',
+        args: ['-h'],
+        config: 'help'
+    }
+
+]));
