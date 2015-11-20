@@ -125,7 +125,7 @@ function setup(command, parser, collectors, iterator, delegate) {
             }
         }
 
-        if (term.type !== 'trump') {
+        if (!term.trump) {
             collectors.push(term.collector);
         }
     }

@@ -624,6 +624,12 @@ test('trump flags', cases(new Command('helpful', {
         name: 'trump flag',
         args: ['-h'],
         config: 'help'
+    },
+
+    {
+        name: 'without trump flag, does not include in config',
+        args: [],
+        config: {}
     }
 
 ]));
