@@ -40,98 +40,101 @@ function setup(command, parser, collectors, iterator, delegate) {
         var name = names[index];
         var term = terms[name];
         term.name = term.name || name;
-
         term.converter = Converter.lift(term.converter || Converters[term.type], term);
         term.validator = Validator.lift(term.validator || Validators[term.type], term);
         term.defaulter = Defaulter.lift(term.defaulter || Defaulters[term.type], term);
-
-        // scan for whether any flag has a specified value
-        var def = term.default;
-
-        // terms with a default value are not required
-        if (def != null) {
-            term.required = false;
-        }
-
-        // a flag is boolean
-        var isBoolean = term.arg == null;
-        for (var findex = 0; findex < term.flags.length && isBoolean; findex++) {
-            var flag = term.flags[findex];
-            if (flag.value != null) {
-                isBoolean = false;
-            }
-        }
-
-        if (isBoolean) {
-            term.type = 'boolean';
-        }
-
-        // scan for a flag that has a default value
-        for (var findex = 0; findex < term.flags.length; findex++) {
-            var flag = term.flags[findex];
-            if (flag.default) {
-                def = term.converter.convert(flag.value, iterator, delegate);
-                if (delegate.isDone()) {
-                    return false;
-                }
-                if (!term.validator.validate(def, iterator, delegate)) {
-                    delegate.error('Invalid default: ' + def);
-                    return false;
-                }
-                break;
-            }
-        }
-
-        // boolean flags are false by default, unless otherwise specified
-        if (def == null && term.arg == null) {
-            def = false;
-        }
-
-        term.default = def;
-
-        var Collector = Collectors[term.type] || Collectors[term.collectorType] || ValueCollector;
-        term.collector = new Collector(term);
-
-        // if there are flags, set up parsers for each flag
-        for (var findex = 0; findex < term.flags.length; findex++) {
-            var flag = term.flags[findex];
-            var termParser = setupTermParser(Parsers, term, flag, iterator, delegate);
-            if (delegate.isDone()) {
-                return false;
-            }
-            parser.flags[flag.flag] = termParser;
-        }
-
-        // if the term has no flags (like <arg>)
-        // or if the flags are optional (like [--flag] <arg>)
-        // or if the term is required and consumes an argument (unlike --flag)
-        // but (implicitly) not optional flags (like [--flag] or [--flag <arg>])
-        if (
-            term.flags.length === 0 ||
-            term.optionalFlag ||
-            (term.required && term.arg != null)
-        ) {
-            var termParser = setupTermParser(Parsers, term, null, iterator, delegate);
-            if (delegate.isDone()) {
-                return false;
-            }
-            if (term.collectorType == null) {
-                // assert parser.tail == null
-                parser.args.push(termParser);
-            } else if (parser.tail == null) {
-                parser.tail = termParser;
-            } else {
-                // assert this cannot be
-            }
-        }
-
-        if (!term.trump) {
-            collectors.push(term.collector);
-        }
+        setupTerm(term, Parsers, Collectors, parser, collectors, iterator, delegate);
     }
 
     return true;
-};
+}
+
+function setupTerm(term, Parsers, Collectors, parser, collectors, iterator, delegate) {
+
+    // scan for whether any flag has a specified value
+    var def = term.default;
+
+    // terms with a default value are not required
+    if (def != null) {
+        term.required = false;
+    }
+
+    // a flag is boolean
+    var isBoolean = term.arg == null;
+    for (var findex = 0; findex < term.flags.length && isBoolean; findex++) {
+        var flag = term.flags[findex];
+        if (flag.value != null) {
+            isBoolean = false;
+        }
+    }
+
+    if (isBoolean) {
+        term.type = 'boolean';
+    }
+
+    // scan for a flag that has a default value
+    for (var findex = 0; findex < term.flags.length; findex++) {
+        var flag = term.flags[findex];
+        if (flag.default) {
+            def = term.converter.convert(flag.value, iterator, delegate);
+            if (delegate.isDone()) {
+                return false;
+            }
+            if (!term.validator.validate(def, iterator, delegate)) {
+                delegate.error('Invalid default: ' + def);
+                return false;
+            }
+            break;
+        }
+    }
+
+    // boolean flags are false by default, unless otherwise specified
+    if (def == null && term.arg == null) {
+        def = false;
+    }
+
+    term.default = def;
+
+    var Collector = Collectors[term.type] || Collectors[term.collectorType] || ValueCollector;
+    term.collector = new Collector(term);
+
+    // if there are flags, set up parsers for each flag
+    for (var findex = 0; findex < term.flags.length; findex++) {
+        var flag = term.flags[findex];
+        var termParser = setupTermParser(Parsers, term, flag, iterator, delegate);
+        if (delegate.isDone()) {
+            return false;
+        }
+        parser.flags[flag.flag] = termParser;
+    }
+
+    // if the term has no flags (like <arg>)
+    // or if the flags are optional (like [--flag] <arg>)
+    // or if the term is required and consumes an argument (unlike --flag)
+    // but (implicitly) not optional flags (like [--flag] or [--flag <arg>])
+    if (
+        term.flags.length === 0 ||
+        term.optionalFlag ||
+        (term.required && term.arg != null)
+    ) {
+        var termParser = setupTermParser(Parsers, term, null, iterator, delegate);
+        if (delegate.isDone()) {
+            return false;
+        }
+        if (term.collectorType == null) {
+            // assert parser.tail == null
+            parser.args.push(termParser);
+        } else if (parser.tail == null) {
+            parser.tail = termParser;
+        } else {
+            // assert this cannot be
+        }
+    }
+
+    if (!term.trump) {
+        collectors.push(term.collector);
+    }
+}
 
 function setupTermParser(Parsers, term, flag, iterator, delegate) {
     if (term.trump) {
