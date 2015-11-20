@@ -4,7 +4,9 @@ function ShonParser(args) {
     this.name = args.name;
     this.collector = args.collector;
     this.required = args.required;
-    this.json = args.json;
+    if (args.json != null) {
+        this.json = args.json;
+    }
 }
 
 ShonParser.prototype.json = false;
