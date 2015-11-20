@@ -61,6 +61,10 @@ test('shon', cases([
         error: 'Unexpected flag'
     },
     {
+        input: [''],
+        output: ''
+    },
+    {
         input: ['+10'],
         output: 10
     },

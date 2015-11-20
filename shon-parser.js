@@ -60,7 +60,7 @@ ShonParser.prototype.parseRemainingValue = function parseRemainingValue(arg, cur
         return this.parseString(cursor, delegate);
     } else if (this.json && arg.lastIndexOf('{', 0) === 0) {
         return this.parseJSON(arg, cursor, delegate);
-    } else if (+arg === +arg) {
+    } else if (arg && +arg === +arg) {
         return +arg;
     } else if (arg.lastIndexOf('-', 0) === 0) {
         delegate.error('Unexpected flag');
