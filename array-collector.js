@@ -14,7 +14,7 @@ ArrayCollector.prototype.collect = function collect(value, iterator, delegate) {
     this.value.push(value);
     if (this.value.length > this.maxLength) {
         delegate.error('Too many: ' + this.arg);
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
         return false;
     }
     return true;
@@ -28,7 +28,7 @@ ArrayCollector.prototype.capture = function capture(iterator, delegate) {
     }
     if (this.value.length < this.minLength) {
         delegate.error('Too few: ' + this.arg);
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
     }
     return this.value;
 };

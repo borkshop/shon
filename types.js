@@ -52,7 +52,7 @@ function convertBoolean(string, iterator, delegate) {
         return false;
     } else {
         delegate.error('Must be true or false');
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
     }
 }
 
@@ -61,7 +61,7 @@ function convertJson(string, iterator, delegate) {
         return JSON.parse(string);
     } catch (error) {
         delegate.error(error.message);
-        delegate.cursor(iterator.cursor, -1);
+        delegate.cursor(-1);
         return null;
     }
 }

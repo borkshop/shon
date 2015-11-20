@@ -458,7 +458,7 @@ function convertBoolean(string, iterator, delegate) {
         return false;
     } else {
         delegate.error('Must be true or false');
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
     }
 }
 ```

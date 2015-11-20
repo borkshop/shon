@@ -31,7 +31,7 @@ ShonParser.prototype.parseValue = function parseValue(cursor, delegate, root) {
         return this.parseRemainingValue(arg, cursor, delegate);
     } else if (this.required || !root) {
         delegate.error('Expected value');
-        delegate.cursor(cursor);
+        delegate.cursor();
         return null;
     }
     return null;
@@ -64,7 +64,7 @@ ShonParser.prototype.parseRemainingValue = function parseRemainingValue(arg, cur
         return +arg;
     } else if (arg.lastIndexOf('-', 0) === 0) {
         delegate.error('Unexpected flag');
-        delegate.cursor(cursor, -1);
+        delegate.cursor(-1);
         return null;
     } else {
         return arg;
@@ -74,7 +74,7 @@ ShonParser.prototype.parseRemainingValue = function parseRemainingValue(arg, cur
 ShonParser.prototype.parseRemainingArrayOrObject = function parseRemainingArrayOrObject(cursor, delegate) {
     if (cursor.done()) {
         delegate.error('Expected remaining array or object');
-        delegate.cursor(cursor);
+        delegate.cursor();
         return null;
     }
     var arg = cursor.peek();
@@ -92,7 +92,7 @@ ShonParser.prototype.parseRemainingArray = function parseRemainingArray(array, c
     for (;;) {
         if (cursor.done()) {
             delegate.error('Expected remaining array');
-            delegate.cursor(cursor);
+            delegate.cursor();
             return null;
         }
         var arg = cursor.shift();
@@ -112,7 +112,7 @@ ShonParser.prototype.parseRemainingObject = function parseRemainingObject(object
     for (;;) {
         if (cursor.done()) {
             delegate.error('Expected key for remaining object');
-            delegate.cursor(cursor, -1);
+            delegate.cursor(-1);
             return null;
         }
         var arg = cursor.shift();
@@ -120,7 +120,7 @@ ShonParser.prototype.parseRemainingObject = function parseRemainingObject(object
             break;
         } else if (arg === '--') {
             delegate.error('Expected key for remaining object');
-            delegate.cursor(cursor, -1);
+            delegate.cursor(-1);
             return null;
         } else if (arg.lastIndexOf('--', 0) === 0) {
             var index = arg.indexOf('=', 2);
@@ -141,7 +141,7 @@ ShonParser.prototype.parseRemainingObject = function parseRemainingObject(object
             object[key] = value;
         } else {
             delegate.error('Expected key for remaining object');
-            delegate.cursor(cursor, -1);
+            delegate.cursor(-1);
             return null;
         }
     }
@@ -151,7 +151,7 @@ ShonParser.prototype.parseRemainingObject = function parseRemainingObject(object
 ShonParser.prototype.parseString = function parseString(cursor, delegate) {
     if (cursor.done()) {
         delegate.error('Expected string');
-        delegate.cursor(cursor);
+        delegate.cursor();
         return null;
     }
     return cursor.shift();
@@ -162,7 +162,7 @@ ShonParser.prototype.parseJSON = function parseJSON(arg, cursor, delegate) {
         return JSON.parse(arg);
     } catch (error) {
         delegate.error(error.message);
-        delegate.cursor(cursor);
+        delegate.cursor();
         return null;
     }
 };

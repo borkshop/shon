@@ -20,12 +20,12 @@ ValueParser.prototype.parse = function parse(iterator, delegate, flag) {
             return this.collector.collect(value, iterator, delegate);
         } else {
             delegate.error('Invalid: ' + this.arg);
-            delegate.cursor(iterator.cursor, -1);
+            delegate.cursor(-1);
             return false;
         }
     } else if (this.required) {
         delegate.error('Expected: ' + this.arg);
-        delegate.cursor(iterator.cursor);
+        delegate.cursor();
         return false;
     }
     return true;
