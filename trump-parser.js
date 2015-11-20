@@ -1,7 +1,7 @@
 'use strict';
 
 function TrumpParser(args) {
-    this.value = args.value;
+    this.value = args.name;
     this.collector = args.collector;
 }
 

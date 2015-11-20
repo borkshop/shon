@@ -21,7 +21,7 @@ function parse(command, iterator, delegate) {
         return null;
     }
     if (!parser.parse(iterator, delegate)) {
-        return null;
+        return delegate.trumped;
     }
     return capture(command, collectors, iterator, delegate);
 }
@@ -134,7 +134,7 @@ function setup(command, parser, collectors, iterator, delegate) {
 };
 
 function setupTermParser(Parsers, term, flag, iterator, delegate) {
-    if (term.type === 'trump') {
+    if (term.trump) {
         return new TrumpParser(term);
     } else if (term.type === 'command') {
         return new CommandParser(term);

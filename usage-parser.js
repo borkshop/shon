@@ -87,6 +87,9 @@ module.exports = (function() {
                 term.type = type;
                 term.help = help;
                 term.usage = text().trim();
+                if (type === 'trump') {
+                    term.trump = true;
+                }
                 return term;
             },
         peg$c15 = "[",

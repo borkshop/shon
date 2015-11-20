@@ -58,6 +58,9 @@ usageline = term:(optional / required) type:type help:help {
         term.type = type;
         term.help = help;
         term.usage = text().trim();
+        if (type === 'trump') {
+            term.trump = true;
+        }
         return term;
     }
 
