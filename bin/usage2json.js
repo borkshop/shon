@@ -17,7 +17,12 @@ var usage = fs.readFileSync(config.path, 'utf8');
 try {
     var json = parser.parse(usage, {startRule: 'document'});
 } catch (error) {
-    console.log(config.path + ':' + error.line + ':' + error.column + ': ' + error.message);
+    console.log(
+        config.path + ':' +
+        error.location.start.line + ':' +
+        error.location.start.column + ': ' +
+        error.message
+    );
     process.exit(-1);
 }
 
