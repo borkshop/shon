@@ -84,7 +84,7 @@ Parser.prototype.parseFlag = function parseFlag(iterator, delegate) {
         }
     } else {
         delegate.error('Unexpected flag: ' + JSON.stringify(flag));
-        delegate.cursor();
+        delegate.cursor(-1);
         return false;
     }
     if (iterator.reserve !== null && iterator.reserveFlag === null) {
