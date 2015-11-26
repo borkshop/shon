@@ -190,8 +190,8 @@ type = ':' name:name _ {
         return null;
     }
 
-help = [ \n]* help:$( ( [ \n]? !( [\[ ] ) !( _ name ':' ) [^\n] )* ) [ \n]* {
-        return help;
+help = help:$( !( '\n' ' '* name ':' ) . )* {
+        return help.trim();
     }
 
 number = $([1-9][0-9]*)
