@@ -40,6 +40,6 @@
     "test": "npm run build-parser -s && node test",
     "cover": "istanbul cover --report html --print node test/index.js -- --color | faucet && istanbul report text",
     "view-cover": "opn coverage/index.html",
-    "build-parser": "pegjs --allowed-start-rules line,document usage.pegjs usage-parser.js"
+    "build-parser": "pegjs --cache --allowed-start-rules line,document usage.pegjs usage-parser.js"
   }
 }

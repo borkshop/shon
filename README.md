@@ -11,317 +11,91 @@ subcommands.
 Shon also supports a recursive descent parser for Shell Object Notation (SHON),
 so complex objects can be expressed as command line arguments.
 
-## Installation
+Install shon with npm, for both the usage to JSON translator and the
+lightweight argument parser.
 
 ```
 $ npm install --save shon
 ```
 
-## Common Boolean Flags
+The following is a `.usage` file.
 
-A boolean flag is an option that switches a config value from false to true.
+```usage
+offer
 
-```js
-var Command = require('shon/command');
-var command = new Command('dwim', {
-    bool: '[-b|--bool] A boolean flag'
-});
-
-var config = command.exec();
-console.log(config.bool);
+name: <name>                            A required argument that populates the
+                                        `name` config property.
+age: <age> :number                      A required argument that populates the
+                                        `age` config property with a number.
+resume: <filename> :input               A required file name or "-" for standard
+                                        input that populates the `resume` config
+                                        property with a readable stream.
+offer: [<filename>] :output             An optional file name or "-" for standard
+                                        output that populates the `offer` config
+                                        property with a writable stream.
+                                        Defaults to standard output.
+nick: [<nickname>]                      An optional argument that populates the
+                                        `nick` config property.
+active: [-a]                            A boolean flag, defaults the active config
+                                        variable to false, true if -a is present
+                                        among arguments.
+enabled: [-e|--enabled]                 A boolean flag, accepted as either a long
+                                        or short flag.
+salary: [-s|--salary <salary>] :number  An optional flag with an argument,
+                                        defaults the `salary` config variable to
+                                        null, or a number if defined.
+                                        The salary argument must be a valid number.
+prefers: [-S=salary*|-E=equity]         An optional flag that sets the `prefers`
+                                        config property to either "salary" or
+                                        "equity", and defualts to "salary".
+available: -a=true|-A=false :boolean    A required flag, either little or big A,
+                                        parsed as boolean.
+description: [-d <description>] :atinput An optional description, either as text
+                                        in the argument, or in a file if the
+                                        filename is prefixed with @ like
+                                        @desc.txt
+prize: [-p <place>] :quantity           An optional prize place, a number that
+                                        must be 1 or more.
+misc: [-m <misc>] :json                 Unstructured data expressed as JSON
+                                        on the command line.  Must parse properly.
+config: [-c <config>] :shon             A configuration expression in JSON or SHON,
+                                        which looks like [ --key value ] and can
+                                        express nested objects and arrays.
 ```
 
-```
-$ dwim
-false
+The `usage2shon` utility converts usage files
+to a JSON description of the command.
+You can set up building usage in your `pakcage.json` then just run `npm run
+usage` to build a new usage JSON.
 
-$ dwim -b
-true
-```
-
-A boolean flag should only be provided once.
-
-```
-$ dwim -bb
-Redundant: bool
-dwim -b -b
-        ^
-usage: dwim
-  [-b|--bool] A boolean flag
+```json
+{
+    "scripts": {
+        "usage": "usage2shon offer.usage > offer.json
+    }
+}
 ```
 
-## Troll
-
-The Bridge Troll accepts three required arguments.
-They can be taken by position, or in any order with flags.
-The last argument is a number, so the `:quantity` type annotation ensures that
-the value on the command line is converted to a number and is a valid, positive
-number. The `:number` annotation merely validates that the value is a number.
-
-```js
-var command = new Command('troll\n' +
-    'Answer me these questions three, ere the other side ye see.', {
-    name: '[-n|--name] <name> What is your name?',
-    color: '[-c|--color] <color> What is your favorite colour?',
-    airspeed: '[-a|--airspeed] <airspeed> :quantity What is the average ' +
-        'airspeed velocity of an unladen swallow?'
-});
-
-var config = command.exec();
-
-console.log('Name:', config.name);
-console.log('Color:', config.color);
-console.log('Airpseed:', config.airspeed);
-```
-
-The square brackets around the flags denote that the flag is optional but the
-argument is not.
-
-## Cut
-
-The cut command accepts two optional arguments with custom default values, a
-custom converter, and a custom validator.
-The square brackets around the flag and argument denote that the argument is
-optional and must be specified with the flag.
+The `shon/exec` module accepts the JSON description and produces a
+configuration object, or reports errors to the console and returns `null`.
 
 ```js
 'use strict';
-
-var Command = require('shon/command');
-
-var command = new Command('cut', {
-    delim: '[-d <delim>] The delimiter to split on, space by default',
-    fields: '[-f <fields>] Comma separated field numbers',
-    input: '[<file>{1..}] :input The file or files to read, or standard input'
-});
-
-command.delim.default = ' ';
-
-command.fields.converter = function convert(fields) {
-    var parts = fields.split(',');
-    return parts.map(Number);
-};
-
-command.fields.validator = function validate(fields) {
-    return fields.every(isNumber);
-};
-
-function isNumber(number) {
-    return number === number; // Just excludes NaN
+var shon = require('shon/exec');
+var usage = requir('./offer.json');
+function main() {
+    var config = shon(usage);
+    if (config == null) {
+        return;
+    }
+    console.log('active:', config.active);
+    console.log('enabled:', config.enabled);
 }
-
-var config = command.exec();
-
-// using config.delim and config.fields...
-// see demos/cut.js
-config.input.forEach(onInput);
-```
-
-## Sum
-
-The sum command accepts any number of arguments and computes their sum.
-
-```js
-var Command = require('shon/command');
-var command = new Command('sum computes the sum of multiple numbers', {
-    numbers: '<number>... :number'
-});
-var config = command.exec();
-console.log(config.numbers.reduce(function add(a, b) {
-    return a + b;
-}));
-```
-
-```
-$ sum
-0
-
-$ sum 1 2 3
-6
-
-$ sum a
-Invalid: number
-sum a
-    ^
-```
-
-## Soup
-
-The soup command illustrates a single configuration variable that can be true
-or false depending on which of several flags are given.
-Each flag has its own corresponding value, indicated by its `=` expression,
-and one of them may be a default, indicated with the asterisk.
-
-Additionally, the configuration value has a specified `:boolean` type,
-necessary to convert the flag values as strings to their corresponding boolean
-value.
-
-```js
-var Command = require('shon/command');
-var command = new Command('soup', {
-    soup: '[--soup=true*|-s=true|--no-soup=false|-S=false] :boolean ' +
-        'Whether to serve soup'
-});
-
-var config = command.exec(process.argv, 2);
-
-if (config.soup) {
-    console.log('Have soup');
-} else {
-    console.log('No soup for you');
-}
-```
-
-```
-$ serve
-Have soup
-
-$ serve --no-soup
-No soup for you
-```
-
-It is unnecessary to specify the `:boolean` for flags that take no argument and
-do not specify their values: they are presumed to all set the config value to
-true.
-
-## Help Trumps All
-
-Idioms like ``[-h|--help]*`` and ``[-v|--version]*`` are special because they
-invalidate all other required arguments.
-The asterisk denotes "trump flags".
-If the parser encounters one of these trump flags, it will bypass all further
-validation and simply return the name of the config variable instead of the
-config object.
-
-This helpful command has a required argument, but if you provide `--help` on
-the command line, the parser overlooks the missing argument and returns "help"
-so you can provide an alternate behavior.
-
-```js
-var command = new Command('do', {
-    activity: '<activity>',
-    help: '[-h|--help]*'
-});
-
-var config = command.exec();
-
-if (config === 'help') {
-    command._logUsage();
-    return;
-}
-
-console.log('doing activity:', config.activity);
 ```
 
 ## Subcommands
 
-Commands can have subcommands.
-The selected command gets captured as a `{name, config}` object.
-
-```js
-'use strict';
-
-var Command = require('..');
-
-var command = new Command('db\n' +
-    'A simple key-value store', {
-    action: {
-        get: {
-            key: '<key>'
-        },
-        set: {
-            key: '<key>',
-            value: '<value>'
-        },
-        rm: {
-            key: '<key>',
-            force: '[-f|--force]'
-        },
-        ls: {
-        }
-    }
-});
-
-var config = command.exec();
-var subconfig = config.action.config;
-
-var store = {a: 10, b: 20, c: 30};
-
-switch (config.action.name) {
-    case 'ls':
-        console.log(Object.keys(store));
-        break;
-    case 'get':
-        console.log(store[subconfig.key]);
-        break;
-    case 'set':
-        store[subconfig.key] = subconfig.value;
-        break;
-    case 'rm':
-        delete store[subconfig.key];
-        break;
-}
-```
-
-```
-$ db ls
-[ 'a', 'b', 'c' ]
-$ db set a 10
-$ db get a
-10
-$ db rm a
-```
-
-## Precompiled Usage
-
-The Command object provides a thin veneer, easily bypassed.
-You can precompile a command description or "usage file" to JSON and use that
-JSON blob directly.
-The following is a `troll.usage` file.
-
-```
-usage: troll <name> <color> <airspeed>
-Answer me these questions three, ere the other side ye see.
-
-name: [-n|--name] <name>
-    What is your name?
-color: [-c|--color] <color>
-    What is your favorite color?
-airspeed: [-a|--airpseed] <airspeed> :number
-    What is the average airspeed velocity of an unladen swallow?
-help: [-h|--help]*
-```
-
-Shon provides a command line tool called `usage2json` that converts files in
-this format to a JSON blob.
-
-```
-usage2json troll.usage > troll.json
-```
-
-You can use the generated JSON directly.
-This bypasses the usage parser entirely.
-
-```js
-'use strict';
-
-var exec = require('../exec');
-var logUsage = require('../log-usage');
-var command = require('./troll.json')
-var config = exec(command);
-
-if (config === 'help') {
-    return logUsage(command);
-}
-
-console.log('Name:', config.name);
-console.log('Color:', config.color);
-console.log('Airpseed:', config.airspeed);
-```
-
-This does, however, somewhat compromise the extensibility of the command
-description since the JSON blob does not index terms both by their position and
-name.
+...
 
 ## Usage Grammar
 
