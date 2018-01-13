@@ -1,4 +1,10 @@
 
+# v3
+
+Version 3 fixes the default behavior for input and output stream flags.
+These are now null by default, making absense distinguishable from the presence
+of a "-", and also avoiding the resumption of stdin unless expressly requested.
+
 # v2
 
 Be aware of the following changes when migrating from v1:
