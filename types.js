@@ -10,11 +10,7 @@ var ValueCollector = require('./value-collector');
 // TODO SetCollector
 
 var types = {
-    defaults: {
-        input: defaultInput,
-        atinput: defaultInput,
-        output: defaultOutput
-    },
+    defaults: {},
     parsers: {
         shon: ShonParser,
         jshon: JshonParser,
@@ -72,16 +68,12 @@ function InputConverter(args) {
 
 InputConverter.prototype.convert = function convert(value) {
     if (value === '-') {
-        return defaultInput();
+        process.stdin.resume();
+        return process.stdin;
     } else {
         return fs.createReadStream(value, this.encoding);
     }
 };
-
-function defaultInput() {
-    process.stdin.resume();
-    return process.stdin;
-}
 
 function OutputConverter(args) {
     this.encoding = args.encoding || 'utf8';
@@ -89,16 +81,11 @@ function OutputConverter(args) {
 
 OutputConverter.prototype.convert = function convert(value) {
     if (value === '-') {
-        process.stdin.resume();
         return process.stdout;
     } else {
         return fs.createWriteStream(value, this.encoding);
     }
 };
-
-function defaultOutput() {
-    return process.stdout;
-}
 
 function AtInputConverter(args) {
     this.encoding = args.encoding || 'utf8';
