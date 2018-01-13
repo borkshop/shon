@@ -30,7 +30,7 @@ Delegate.prototype.isDone = function isDone() {
 
 Delegate.prototype.error = function error(message) {
     var key = 'error' + this.index++;
-    this.assert.equals(message, this.expected[key], 'Logs ' + key + ': ' + message);
+    this.assert.ok(message.lastIndexOf(this.expected[key], 0) == 0, 'Logs ' + key + ': ' + message);
     delete this.expected[key];
     this.exitCode = 1;
 };
